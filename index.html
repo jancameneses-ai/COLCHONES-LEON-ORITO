@@ -24,13 +24,14 @@
   // (Firebase > Configuracion del proyecto > Tus apps > Configuracion del SDK).
   // Mientras diga PEGAR_AQUI, la app funciona en MODO LOCAL (los datos quedan solo en este equipo).
   const firebaseConfig = {
-    apiKey: "PEGAR_AQUI",
-    authDomain: "",
-    databaseURL: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyCWaHcA90RRQBRKO4LXWrVyj0yoNnq0UA4",
+    authDomain: "colchones-leon-orito.firebaseapp.com",
+    databaseURL: "https://colchones-leon-orito-default-rtdb.firebaseio.com",
+    projectId: "colchones-leon-orito",
+    storageBucket: "colchones-leon-orito.firebasestorage.app",
+    messagingSenderId: "799942437030",
+    appId: "1:799942437030:web:b993fc55d9e56ac4c02c67",
+    measurementId: "G-X9MR9DJ835"
   };
   const FB_CONFIGURADO = firebaseConfig.apiKey && firebaseConfig.apiKey!=='PEGAR_AQUI' && !!firebaseConfig.databaseURL;
   if(!FB_CONFIGURADO){ window.fbDisabled=true; window.firebaseReady=true; }
