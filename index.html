@@ -1149,7 +1149,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
   <div class="g4 kpi-row" style="margin-bottom:12px">
     <div class="met"><div class="ml">Recibido hoy</div><div class="mv" id="rc-k-hoy" style="color:#1e8449">$0</div></div>
     <div class="met met-az"><div class="ml">Recibido este mes</div><div class="mv" id="rc-k-mes">$0</div></div>
-    <div class="met"><div class="ml">Intereses del mes</div><div class="mv" id="rc-k-int" style="color:#e67e22">$0</div></div>
+    <div class="met"><div class="ml">Ultimo RC</div><div class="mv" id="rc-k-int" style="color:#1b6ca8">-</div></div>
     <div class="met met-az"><div class="ml">Pagos este mes</div><div class="mv" id="rc-k-n">0</div></div>
   </div>
   <div class="card">
@@ -1174,27 +1174,27 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
         <div class="resumen-ped" id="rc-cli-resumen" style="display:flex"></div>
       </div>
       <div class="box-sec">
-        <div class="box-tit">2. Valor del pago</div>
-        <div class="g3">
-          <div><label>Valor de la cuota $</label><input type="text" inputmode="numeric" id="rc-capital" class="noup" placeholder="$ 0" oninput="fmtInputPesos(this);rcCalc()"></div>
-          <div><label>Intereses / mora $</label><input type="text" inputmode="numeric" id="rc-interes" class="noup" placeholder="$ 0" oninput="fmtInputPesos(this);rcCalc()"></div>
-          <div><label>Total recibido $</label><input type="text" id="rc-total" readonly style="color:#1e8449;font-size:14px"></div>
+        <div class="box-tit">2. Datos del pago</div>
+        <div class="fv-box">
+          <label for="rc-rc">RC:<span style="color:#e74c3c">*</span></label>
+          <input type="text" id="rc-rc" inputmode="numeric" maxlength="12" placeholder="0000" class="noup" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'');this.classList.remove('fv-err')">
+          <span class="fv-ayuda">Numero del recibo de caja (obligatorio)</span>
         </div>
-        <div class="g3" style="margin-top:8px">
+        <div class="g3">
+          <div><label>Valor del pago $</label><input type="text" inputmode="numeric" id="rc-capital" class="noup" placeholder="$ 0" oninput="fmtInputPesos(this)" style="color:#1e8449;font-weight:700"></div>
           <div><label>Fecha</label><input type="date" id="rc-fecha" class="noup"></div>
           <div><label>Medio</label><select id="rc-medio"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Otro</option></select></div>
-          <div><label>No. de credito / referencia</label><input type="text" id="rc-ref" class="noup" placeholder="Opcional"></div>
         </div>
       </div>
       <button class="btn bg" onclick="rcRegistrar()">Registrar pago</button>
-      <div style="font-size:10px;color:#888;margin-top:6px">El pago entra al Libro Contable como ingreso, con el valor de la cuota y los intereses separados.</div>
+      <div style="font-size:10px;color:#888;margin-top:6px">El pago entra al Libro Contable como ingreso, con su numero de RC.</div>
     </div>
   </div>
   <div class="card">
     <h2>Pagos recibidos</h2>
-    <input type="text" id="rc-hist-buscar" placeholder="Buscar por cliente, cedula, fecha o referencia..." oninput="renderRecaudos()" style="text-transform:none;margin-bottom:10px">
+    <input type="text" id="rc-hist-buscar" placeholder="Buscar por cliente, cedula, fecha o RC..." oninput="renderRecaudos()" style="text-transform:none;margin-bottom:10px">
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Fecha</th><th>Cliente</th><th>Cedula</th><th>Referencia</th><th style="text-align:right">Cuota</th><th style="text-align:right">Intereses</th><th style="text-align:right">Total</th><th>Recibio</th><th></th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Cliente</th><th>Cedula</th><th>RC</th><th style="text-align:right">Valor pagado</th><th>Recibio</th><th></th></tr></thead>
       <tbody id="rc-tb"></tbody>
     </table></div>
     <div id="rc-pag"></div>
@@ -1509,6 +1509,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
         <option value="Compra de mercancia">Compra de mercancia</option>
         <option value="Otras compras">Otras compras</option>
         <option value="Otros servicios">Otros servicios</option>
+        <option value="Traslado de caja">Traslado de caja</option>
       </select>
     </div>
   </div>
@@ -2048,6 +2049,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
           <option value="Compra de mercancia">Compra de mercancia</option>
           <option value="Otras compras">Otras compras</option>
           <option value="Otros servicios">Otros servicios</option>
+        <option value="Traslado de caja">Traslado de caja</option>
           <option value="Ingreso por ventas">Ingreso por ventas</option>
         </select>
       </div>
@@ -9234,37 +9236,40 @@ function rcElegirCliente(id){
   g('rc-cli-datos').textContent=[c.cedula?'CC '+c.cedula:'Sin cedula',c.tel||'Sin telefono',c.barrio].filter(Boolean).join(' — ');
   var suyos=recaudos.filter(function(r){return r.clienteId===id;}).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
   var tot=suyos.reduce(function(s,r){return s+(r.total||0);},0),intT=suyos.reduce(function(s,r){return s+(r.interes||0);},0);
-  g('rc-cli-resumen').innerHTML='<div><span>Pagos hechos</span><b>'+suyos.length+'</b></div><div><span>Total pagado</span><b style="color:#1e8449">'+fmt(tot)+'</b></div><div><span>Intereses pagados</span><b style="color:#e67e22">'+fmt(intT)+'</b></div><div><span>Ultimo pago</span><b>'+(suyos.length?suyos[0].fecha:'-')+'</b></div>';
-  if(suyos.length&&suyos[0].ref&&!g('rc-ref').value)sv('rc-ref',suyos[0].ref);
+  g('rc-cli-resumen').innerHTML='<div><span>Pagos hechos</span><b>'+suyos.length+'</b></div><div><span>Total pagado</span><b style="color:#1e8449">'+fmt(tot)+'</b></div><div><span>Ultimo RC</span><b>'+(suyos.length&&suyos[0].rc?suyos[0].rc:'-')+'</b></div><div><span>Ultimo pago</span><b>'+(suyos.length?suyos[0].fecha:'-')+'</b></div>';
   sv('rc-fecha',fechaHoyISO());
   g('rc-cliente-box').style.display='block';
   var cap=g('rc-capital');if(cap)cap.focus();
 }
 function rcQuitarCliente(){
   rcClienteId=null;g('rc-cliente-box').style.display='none';
-  ['rc-capital','rc-interes','rc-total','rc-ref'].forEach(function(k){sv(k,'');});
+  ['rc-capital','rc-rc'].forEach(function(k){sv(k,'');});
   var b=g('rc-buscar');if(b)b.focus();
 }
-function rcCalc(){sv('rc-total',fmt(leerPesos('rc-capital')+leerPesos('rc-interes')));}
+function rcCalc(){}
 function rcRegistrar(){
   if(sinConexionActiva()){toast('Sin conexion a internet. No se puede registrar en este momento.',1);return;}
   var c=clientes.find(function(x){return x.id===rcClienteId;});
   if(!c){toast('Primero busca y elige el cliente',1);return;}
-  var capital=leerPesos('rc-capital'),interes=leerPesos('rc-interes'),total=capital+interes;
+  var rcIn=g('rc-rc'),rcNum=(rcIn.value||'').replace(/\D/g,'');
+  if(!rcNum){rcIn.classList.add('fv-err');rcIn.focus();toast('Escribe el numero de RC (recibo de caja)',1);return;}
+  var rcDup=recaudos.find(function(x){return x.rc&&fvNorm(x.rc)===fvNorm(rcNum);});
+  if(rcDup){rcIn.classList.add('fv-err');rcIn.focus();toast('El RC '+rcNum+' ya esta registrado ('+[rcDup.cliente.nombre,rcDup.cliente.apellido].filter(Boolean).join(' ')+', '+rcDup.fecha+')',1);return;}
+  var capital=leerPesos('rc-capital'),interes=0,total=capital;
   if(!(total>0)){toast('Escribe el valor que pago el cliente',1);return;}
   var fISO=g('rc-fecha').value||fechaHoyISO();
   var fecha=fmtFechaDDMMYYYY(parseDate(fISO));
-  var ref=(g('rc-ref').value||'').trim(),medio=g('rc-medio').value;
+  var ref='',medio=g('rc-medio').value;
   var r={id:'rc_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),ts:Date.now(),fecha:fecha,clienteId:c.id,
     cliente:{nombre:c.nombre,apellido:c.apellido,cedula:c.cedula,tel:c.tel},capital:capital,interes:interes,total:total,
-    medio:medio,ref:ref,quien:currentUser?(currentUser.nombre||currentUser.uname):''};
+    medio:medio,ref:ref,rc:rcNum,quien:currentUser?(currentUser.nombre||currentUser.uname):''};
   recaudos.unshift(r);
-  var desc='Pago Sistecredito: '+nombreCliente(c)+(c.cedula?' (CC '+c.cedula+')':'')+' — cuota '+fmt(capital)+(interes>0?' + intereses '+fmt(interes):'')+(ref?' — Ref '+ref:'')+(medio!=='Efectivo'?' — '+medio:'');
+  var desc='Pago Sistecredito RC-'+rcNum+': '+nombreCliente(c)+(c.cedula?' (CC '+c.cedula+')':'')+(medio!=='Efectivo'?' — '+medio:'');
   addContableAuto(fecha,desc,total,0,'auto','Recaudo Sistecredito');
   if(cont.length)cont[cont.length-1].refRecaudoId=r.id;
-  logActividad('Cartera','Recibio pago Sistecredito de '+nombreCliente(c)+': '+fmt(total)+(interes>0?' (intereses '+fmt(interes)+')':''));
+  logActividad('Cartera','Recibio pago Sistecredito RC-'+rcNum+' de '+nombreCliente(c)+': '+fmt(total));
   save();
-  ['rc-capital','rc-interes','rc-total'].forEach(function(k){sv(k,'');});
+  ['rc-capital','rc-rc'].forEach(function(k){sv(k,'');});
   rcElegirCliente(c.id);renderRecaudos();
   toast('Pago de '+fmt(total)+' registrado en el libro contable');
   if(getPerm('pdf')&&confirm('Descargar el recibo del pago?'))dlReciboRecaudo(r.id);
@@ -9276,24 +9281,22 @@ function renderRecaudos(){
   var delMes=recaudos.filter(function(r){return esMes(r.fecha);});
   if(g('rc-k-hoy'))g('rc-k-hoy').textContent=fmt(recaudos.filter(function(r){return r.fecha===hoy;}).reduce(function(s,r){return s+r.total;},0));
   if(g('rc-k-mes'))g('rc-k-mes').textContent=fmt(delMes.reduce(function(s,r){return s+r.total;},0));
-  if(g('rc-k-int'))g('rc-k-int').textContent=fmt(delMes.reduce(function(s,r){return s+(r.interes||0);},0));
+  if(g('rc-k-int')){var ult=recaudos.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);}).find(function(r){return r.rc;});g('rc-k-int').textContent=ult?'RC-'+ult.rc:'-';}
   if(g('rc-k-n'))g('rc-k-n').textContent=delMes.length;
   var q=((g('rc-hist-buscar')||{value:''}).value||'').toUpperCase().trim();
   var lista=recaudos.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-  if(q)lista=lista.filter(function(r){var c=r.cliente||{};return ([c.nombre,c.apellido,c.cedula,r.fecha,r.ref].join(' ')).toUpperCase().indexOf(q)>=0;});
+  if(q)lista=lista.filter(function(r){var c=r.cliente||{};return coincide([c.nombre,c.apellido,c.cedula,r.fecha,r.ref,r.rc,r.rc?'RC-'+r.rc:''].join(' '),q);});
   var total=lista.length,pages=Math.max(1,Math.ceil(total/RC_PER_PAGE));
   if(rcPag>pages)rcPag=1;
   var pag=lista.slice((rcPag-1)*RC_PER_PAGE,rcPag*RC_PER_PAGE);
   var pw=g('rc-pag');if(pw)pw.innerHTML=pagWidget('rc',rcPag,total,RC_PER_PAGE,'setRcPage');
-  if(!pag.length){tb.innerHTML='<tr><td colspan="9" class="empty">'+(q?'Sin resultados':'Aun no hay pagos registrados')+'</td></tr>';return;}
+  if(!pag.length){tb.innerHTML='<tr><td colspan="7" class="empty">'+(q?'Sin resultados':'Aun no hay pagos registrados')+'</td></tr>';return;}
   tb.innerHTML=pag.map(function(r){
     var c=r.cliente||{};
     return '<tr><td style="font-size:11px;color:#888">'+r.fecha+'</td>'+
       '<td data-l="Cliente" style="font-weight:600">'+[c.nombre,c.apellido].filter(Boolean).join(' ')+'</td>'+
-      '<td data-l="Cedula">'+(c.cedula||'-')+'</td><td data-l="Referencia">'+(r.ref||'-')+'</td>'+
-      '<td data-l="Cuota" style="text-align:right">'+fmt(r.capital)+'</td>'+
-      '<td data-l="Intereses" style="text-align:right;color:#e67e22">'+(r.interes?fmt(r.interes):'-')+'</td>'+
-      '<td data-l="Total" style="text-align:right;font-weight:700;color:#1e8449">'+fmt(r.total)+'</td>'+
+      '<td data-l="Cedula">'+(c.cedula||'-')+'</td><td data-l="RC" style="font-weight:700;color:#1b6ca8">'+(r.rc?'RC-'+r.rc:(r.ref||'-'))+'</td>'+
+      '<td data-l="Valor pagado" style="text-align:right;font-weight:700;color:#1e8449">'+fmt(r.total)+'</td>'+
       '<td data-l="Recibio" style="font-size:10px;color:#888">'+(r.quien||'-')+'<div>'+(r.medio||'')+'</div></td>'+
       '<td style="white-space:nowrap">'+(getPerm('pdf')?'<button class="btn bblue" onclick="dlReciboRecaudo(\''+r.id+'\')">Recibo</button> ':'')+
       (isAdmin()?'<button class="btn bred" onclick="eliminarRecaudo(\''+r.id+'\')">X</button>':'')+'</td></tr>';
@@ -9332,14 +9335,13 @@ function dlReciboRecaudo(id){
   y=44;
   function fila(l,v,col,big){doc.setFontSize(big?12:9.5);doc.setFont('helvetica','normal');doc.setTextColor(90,90,90);doc.text(l,10,y);doc.setFont('helvetica','bold');doc.setTextColor(col?col[0]:20,col?col[1]:20,col?col[2]:20);doc.text(String(v),W-10,y,{align:'right'});y+=big?9:6.5;}
   fila('Fecha:',r.fecha);fila('Cliente:',[c.nombre,c.apellido].filter(Boolean).join(' '));
-  if(c.cedula)fila('Cedula:',c.cedula);if(r.ref)fila('No. de credito / ref.:',r.ref);fila('Medio:',r.medio||'Efectivo');
-  y+=3;doc.setDrawColor(AZ[0],AZ[1],AZ[2]);doc.setLineWidth(0.4);doc.rect(6,y-5,W-12,30);
-  fila('Valor de la cuota:',fmt(r.capital));fila('Intereses / mora:',fmt(r.interes||0),[230,126,34]);
+  if(r.rc)fila('RC:',r.rc,AZ);if(c.cedula)fila('Cedula:',c.cedula);fila('Medio:',r.medio||'Efectivo');
+  y+=3;doc.setDrawColor(AZ[0],AZ[1],AZ[2]);doc.setLineWidth(0.4);doc.rect(6,y-5,W-12,14);
   fila('TOTAL RECIBIDO:',fmt(r.total),VE,true);
   y+=8;doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(140,140,140);
   doc.text('Recibio: '+(r.quien||'-'),W/2,y,{align:'center'});y+=5;
   doc.text('Conserve este recibo como soporte de su pago.',W/2,y,{align:'center'});
-  doc.save('Pago_Sistecredito_'+[c.nombre,c.apellido].filter(Boolean).join('_')+'_'+r.fecha.replace(/\//g,'-')+'.pdf');
+  doc.save('Pago_Sistecredito_'+(r.rc?'RC'+r.rc+'_':'')+[c.nombre,c.apellido].filter(Boolean).join('_')+'_'+r.fecha.replace(/\//g,'-')+'.pdf');
 }
 
 // ── VENTA: buscador de cliente dentro de Nombre y Cedula ──
