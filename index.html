@@ -401,6 +401,7 @@ label{color:#4a6a83}
 .fv-box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:2px solid #2e8fd6;border-left:6px solid #27ae60;border-radius:12px;padding:12px 16px;margin-bottom:12px;box-shadow:0 3px 12px rgba(46,143,214,.1)}
 .fv-box label{margin:0!important;font-size:20px!important;font-weight:800!important;color:#1b6ca8!important;letter-spacing:.5px}
 .fv-box input{width:140px!important;font-size:22px!important;font-weight:800;letter-spacing:4px;text-align:center;padding:8px 10px;border:2px solid #cfe6f5;color:#1b6ca8}
+.ds-box{padding:8px 14px}.ds-box label{font-size:17px!important}.ds-box input{width:120px!important;font-size:18px!important;padding:6px 8px}
 .fv-box input.fv-err{border-color:#e74c3c;background:#fdedec;animation:sacudir .3s}
 @keyframes sacudir{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .fv-ayuda{font-size:11px;color:#7a93a8}
@@ -1492,9 +1493,11 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
       <div><label style="color:#c0392b">Egreso $</label><input type="number" id="cont-egr" class="noup" placeholder="0" style="border-color:#f5b7b1;background:#fff5f5;color:#c0392b;font-weight:600" oninput="toggleContCat()"></div>
       <div><button class="btn bg" onclick="addContable()" style="margin-top:0;padding:10px 18px;white-space:nowrap">Agregar</button></div>
     </div>
-    <div id="cont-cat-wrap" style="display:none;margin-top:10px;max-width:320px">
+    <div id="cont-cat-wrap" style="display:none;margin-top:10px">
+     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+     <div style="flex:0 1 320px;min-width:220px">
       <label>Categoria <span style="color:#e74c3c;font-weight:400;text-transform:none">(obligatoria en gastos)</span></label>
-      <select id="cont-cat">
+      <select id="cont-cat" onchange="toggleContCat()">
         <option value="">-- Sin categoria --</option>
         <option value="Acarreos">Acarreos</option>
         <option value="Internet">Internet</option>
@@ -1511,6 +1514,13 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
         <option value="Otros servicios">Otros servicios</option>
         <option value="Traslado de caja">Traslado de caja</option>
       </select>
+     </div>
+     <div id="cont-ds-wrap" class="fv-box ds-box" style="display:none;margin:0">
+      <label for="cont-ds">DS:<span style="color:#e74c3c">*</span></label>
+      <input type="text" id="cont-ds" inputmode="numeric" maxlength="12" placeholder="0000" class="noup" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'');this.classList.remove('fv-err')">
+      <span class="fv-ayuda">Comprobante de egreso (obligatorio)</span>
+     </div>
+     </div>
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
@@ -1534,7 +1544,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
   <div class="card">
     <h2>Movimientos</h2>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-      <input type="text" id="cont-buscar" placeholder="Buscar por fecha o descripcion..." oninput="renderContable()" style="margin-bottom:0;flex:1;text-transform:none">
+      <input type="text" id="cont-buscar" placeholder="Buscar por fecha, descripcion o DS..." oninput="renderContable()" style="margin-bottom:0;flex:1;text-transform:none">
       <button id="cont-undo" onclick="contDeshacer()" title="Deshacer" style="min-width:38px;height:38px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:16px;cursor:pointer;opacity:0.35;transition:opacity .2s">↩</button>
       <button id="cont-redo" onclick="contRehacer()" title="Rehacer" style="min-width:38px;height:38px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:16px;cursor:pointer;opacity:0.35;transition:opacity .2s">↪</button>
     </div>
@@ -2034,7 +2044,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
       </div>
       <div id="ec-cat-wrap" style="display:none">
         <label>Categoria <span style="color:#e74c3c;font-weight:400;text-transform:none">(obligatoria en gastos)</span></label>
-        <select id="ec-cat">
+        <select id="ec-cat" onchange="toggleEcCat()">
           <option value="">-- Sin categoria --</option>
           <option value="Acarreos">Acarreos</option>
           <option value="Internet">Internet</option>
@@ -2052,6 +2062,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
         <option value="Traslado de caja">Traslado de caja</option>
           <option value="Ingreso por ventas">Ingreso por ventas</option>
         </select>
+        <div id="ec-ds-wrap" style="display:none;margin-top:10px"><label>DS - Comprobante de egreso</label><input type="text" id="ec-ds" inputmode="numeric" maxlength="12" placeholder="0000" class="noup" oninput="this.value=this.value.replace(/\D/g,'')" style="font-weight:700;letter-spacing:2px;color:#1b6ca8"></div>
       </div>
     </div>
     <div class="mdf">
@@ -7128,12 +7139,20 @@ function toggleContCat(){
     wrap.style.display='none';
     if(g('cont-cat'))g('cont-cat').value='';
   }
+  var dw=g('cont-ds-wrap');if(dw)dw.style.display=(egr>0&&dsRequerido(g('cont-cat').value))?'flex':'none';
+}
+function dsRequerido(cat){return cat!=='Traslado de caja';}
+function dsDuplicado(ds,ignorarIdx){
+  var n=fvNorm(ds);if(!n)return null;
+  for(var k=0;k<cont.length;k++){if(k!==ignorarIdx&&cont[k].ds&&fvNorm(cont[k].ds)===n)return cont[k];}
+  return null;
 }
 function toggleEcCat(){
   var egr=parseFloat(g('ec-egr').value)||0;
   var wrap=g('ec-cat-wrap');
   if(!wrap)return;
   wrap.style.display=egr>0?'block':'none';
+  var dw=g('ec-ds-wrap');if(dw)dw.style.display=(egr>0&&dsRequerido(g('ec-cat').value))?'block':'none';
 }
 var actPag=1; var ACT_PER_PAGE=15;
 
@@ -7270,6 +7289,13 @@ function addContable(){
   if(!desc){toast('Escribe una descripcion',1);return;}
   if(!ing&&!egr){toast('Ingresa un valor de ingreso o egreso',1);return;}
   if(egr>0&&!cat){toast('Selecciona la categoria del gasto',1);return;}
+  var ds='';
+  if(egr>0&&dsRequerido(cat)){
+    var dsIn=g('cont-ds');ds=(dsIn.value||'').replace(/\D/g,'');
+    if(!ds){dsIn.classList.add('fv-err');dsIn.focus();toast('Escribe el numero DS (comprobante de egreso)',1);return;}
+    var dsD=dsDuplicado(ds,-1);
+    if(dsD){dsIn.classList.add('fv-err');dsIn.focus();toast('El DS '+ds+' ya esta registrado ('+dsD.fecha+' — '+dsD.desc+')',1);return;}
+  }
   // Convert fecha to DD/MM/YYYY
   var fp=fecha.split('-');
   var fechaFmt=fp[2]+'/'+fp[1]+'/'+fp[0];
@@ -7283,6 +7309,7 @@ function addContable(){
     ing:ing,
     egr:egr,
     categoria:cat||'',
+    ds:ds||'',
     tipo:'manual',
     ts:Date.now(),
     quien:_quien,
@@ -7292,6 +7319,7 @@ function addContable(){
   save();
   g('cont-fecha').value=fechaHoyISO();g('cont-desc').value='';
   if(g('cont-cat'))g('cont-cat').value='';
+  if(g('cont-ds'))g('cont-ds').value='';
   g('cont-ing').value='';g('cont-egr').value='';
   toggleContCat();
   renderContable();
@@ -7335,6 +7363,7 @@ function exportarExcelContable(){
         'Fecha':c.fecha,
         'Descripcion':c.desc,
         'Categoria':c.categoria||'',
+        'DS':c.ds||'',
         'Ingreso':c.ing||0,
         'Egreso':c.egr||0,
         'Total acumulado':acum,
@@ -7483,6 +7512,7 @@ function editContable(i){
   sv('ec-ing',c.ing||'');
   sv('ec-egr',c.egr||'');
   if(g('ec-cat'))g('ec-cat').value=c.categoria||'';
+  sv('ec-ds',c.ds||'');
   toggleEcCat();
   // Convert fecha DD/MM/YYYY to YYYY-MM-DD for date input
   var fp=(normFechaGlobal(c.fecha)||c.fecha||'').split('/');
@@ -7501,6 +7531,9 @@ function guardarEditContable(){
   if(!rawFecha){toast('Selecciona una fecha',1);return;}
   if(!desc){toast('Escribe una descripcion',1);return;}
   if(egr>0&&!cat){toast('Selecciona la categoria del gasto',1);return;}
+  var dsE=(egr>0&&dsRequerido(cat))?((g('ec-ds').value||'').replace(/\D/g,'')):'';
+  if(dsE){var dsD2=dsDuplicado(dsE,i);if(dsD2){toast('El DS '+dsE+' ya esta registrado ('+dsD2.fecha+' — '+dsD2.desc+')',1);return;}}
+  if(egr>0&&dsRequerido(cat)&&!dsE&&cont[i].ds){toast('Escribe el numero DS (comprobante de egreso)',1);return;}
   // Movimiento conectado a una venta: el cambio tambien se lleva a la venta / cuota
   var movE=cont[i];
   var dOld=movE.desc||'';
@@ -7523,6 +7556,7 @@ function guardarEditContable(){
   cont[i].ing=ing;
   cont[i].egr=egr;
   cont[i].categoria=cat||'';
+  cont[i].ds=dsE||'';
   cont[i].ts=parseTS(fechaFmt,0);
   var extraSync='';
   if(vLink){
@@ -7793,7 +7827,7 @@ function renderContable(){
   });
   var filtered=withIdx.filter(function(x){
     if(!q)return true;
-    return x.m.desc.toLowerCase().indexOf(q)>=0||x.m.fecha.indexOf(q)>=0||(x.m.categoria||'').toLowerCase().indexOf(q)>=0;
+    return x.m.desc.toLowerCase().indexOf(q)>=0||x.m.fecha.indexOf(q)>=0||(x.m.categoria||'').toLowerCase().indexOf(q)>=0||(x.m.ds&&(('ds-'+x.m.ds).indexOf(q)>=0||String(x.m.ds).indexOf(q)>=0));
   });
 
   // Calculate totals first
@@ -7855,7 +7889,7 @@ function renderContable(){
     return '<tr>'+
       '<td style="font-size:11px;color:#888">'+m.fecha+'</td>'+
       '<td style="font-weight:500">'+m.desc+autoLabel+'</td>'+
-      '<td style="font-size:11px;color:'+(m.categoria?'#555':'#ccc')+'">'+(m.categoria||'-')+'</td>'+
+      '<td style="font-size:11px;color:'+(m.categoria?'#555':'#ccc')+'">'+(m.categoria||'-')+(m.ds?'<div style="font-weight:700;color:#1b6ca8;font-size:11px">DS-'+m.ds+'</div>':'')+'</td>'+
       '<td style="text-align:right;background:#f0fff4;font-weight:600;color:#1e8449">'+(m.ing>0?fmt(m.ing):'—')+'</td>'+
       '<td style="text-align:right;background:#fff5f5;font-weight:600;color:#c0392b">'+(m.egr>0?fmt(m.egr):'—')+'</td>'+
       '<td style="text-align:right;background:#eaf4ff;font-weight:700;color:'+(acum>=0?'#1a5276':'#e74c3c')+'">'+fmt(acum)+'</td>'+
