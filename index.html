@@ -6072,7 +6072,7 @@ function exportarDetalleResExcel(){
 function mostrarGastosDetalle(mesGas,anioGas,soloOperativos){
   var MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var gastosRows=cont.filter(function(c){
-    if(!c.egr||c.egr<=0)return false;
+    if(!esGastoReal(c))return false;
     if(soloOperativos&&c.categoria==='Compra de mercancia')return false;
     var p=(normFechaGlobal(c.fecha)||c.fecha||'').split('/');
     return p.length===3&&(+p[1]-1)===mesGas&&+p[2]===anioGas;
@@ -6497,7 +6497,7 @@ function calcularGananciaNetaMes(mes,anio){
   var ventasM=ven.filter(function(v){return enEsteMes(v.fecha);});
   var ganTotalM=ventasM.reduce(function(s,v){return s+gananciaDeVenta(v);},0);
   var gastosM=cont.filter(function(c){
-    return c.egr>0&&c.categoria!=='Compra de mercancia'&&enEsteMes(c.fecha);
+    return esGastoReal(c)&&c.categoria!=='Compra de mercancia'&&enEsteMes(c.fecha);
   }).reduce(function(s,c){return s+(c.egr||0);},0);
   return ganTotalM-gastosM;
 }
@@ -6667,8 +6667,8 @@ function datosMesSalud(mes,anio){
   var bruta=ventasM.reduce(function(s,v){return s+gananciaDeVenta(v);},0);
   var movs=cont.filter(function(c){return enMes(c.fecha);});
   var ingresos=movs.reduce(function(s,c){return s+(c.ing||0);},0);
-  var inversion=movs.filter(function(c){return c.egr>0&&CATS_INVERSION.indexOf(c.categoria)>=0;}).reduce(function(s,c){return s+(c.egr||0);},0);
-  var operativos=movs.filter(function(c){return c.egr>0&&CATS_INVERSION.indexOf(c.categoria)<0;}).reduce(function(s,c){return s+(c.egr||0);},0);
+  var inversion=movs.filter(function(c){return esGastoReal(c)&&CATS_INVERSION.indexOf(c.categoria)>=0;}).reduce(function(s,c){return s+(c.egr||0);},0);
+  var operativos=movs.filter(function(c){return esGastoReal(c)&&CATS_INVERSION.indexOf(c.categoria)<0;}).reduce(function(s,c){return s+(c.egr||0);},0);
   return {ventas:ventasM.length,vendido:vendido,bruta:bruta,margen:vendido>0?bruta/vendido*100:0,
     ingresos:ingresos,operativos:operativos,inversion:inversion,caja:ingresos-operativos-inversion,
     neta:bruta-operativos,hayMovs:ventasM.length>0||movs.length>0};
@@ -6763,7 +6763,7 @@ function renderSaludNegocio(mes,anio){
   if(d.hayMovs&&d.neta<=0&&d.bruta>0)avisos.push('Los gastos del dia a dia ('+fmt(d.operativos)+') fueron mas que lo que dejaron las ventas ('+fmt(d.bruta)+'). Toca revisar gastos o vender mas.');
   var contado=ven.filter(function(v){return enMes(v.fecha)&&esContado(v);}).reduce(function(s,v){return s+(v.total||0);},0);
   if(d.vendido>0&&(d.vendido-contado)/d.vendido>=0.6&&cob.total>0)avisos.push('El '+Math.round((d.vendido-contado)/d.vendido*100)+'% de lo vendido fue a credito. Hoy te deben '+fmt(cob.total)+': cobrar a tiempo es lo mas importante.');
-  var gastoRaro=cont.filter(function(c){return enMes(c.fecha)&&c.egr>=500000&&CATS_INVERSION.indexOf(c.categoria)<0&&['Arriendo','Salarios o Bonificacion'].indexOf(c.categoria)<0;}).sort(function(a,b){return b.egr-a.egr;})[0];
+  var gastoRaro=cont.filter(function(c){return enMes(c.fecha)&&esGastoReal(c)&&c.egr>=500000&&CATS_INVERSION.indexOf(c.categoria)<0&&['Arriendo','Salarios o Bonificacion'].indexOf(c.categoria)<0;}).sort(function(a,b){return b.egr-a.egr;})[0];
   if(gastoRaro)avisos.push('Hay un gasto grande de '+fmt(gastoRaro.egr)+' ("'+(gastoRaro.desc||'')+'") contado como gasto del dia a dia. Si fue compra de equipo o mercancia, en Contable cambiale la categoria a "Otras compras".');
 
   // Detalle (la tarjeta de numeros de antes)
@@ -6891,7 +6891,7 @@ function renderRes(){
   var sca=sc+ad;
   // Gastos del mes seleccionado en el desplegable
   var gastosMesRows=cont.filter(function(c){
-    if(!c.egr||c.egr<=0)return false;
+    if(!esGastoReal(c))return false;
     var p=(normFechaGlobal(c.fecha)||'').split('/');
     return p.length===3&&(+p[1]-1)===mesActual&&+p[2]===anioActual;
   });
@@ -7023,7 +7023,7 @@ function renderRes(){
     // Gastos por mes (a partir del libro contable)
     var gastosPorMes={};
     cont.forEach(function(c){
-      if(!c.egr||c.egr<=0)return;
+      if(!esGastoReal(c))return;
       var p=(normFechaGlobal(c.fecha)||c.fecha||'').split('/');
       if(p.length!==3)return;
       var gk=(+p[1])+'/'+(+p[2]);
@@ -7141,6 +7141,8 @@ function toggleContCat(){
   }
   var dw=g('cont-ds-wrap');if(dw)dw.style.display=(egr>0&&dsRequerido(g('cont-cat').value))?'flex':'none';
 }
+// Traslado de caja es solo mover dinero: sale de caja pero NO es un gasto del negocio
+function esGastoReal(c){return (c.egr||0)>0&&c.categoria!=='Traslado de caja';}
 function dsRequerido(cat){return cat!=='Traslado de caja';}
 function dsDuplicado(ds,ignorarIdx){
   var n=fvNorm(ds);if(!n)return null;
