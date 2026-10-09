@@ -7326,7 +7326,125 @@ function addContable(){
   toast('Movimiento registrado');
 }
 
+// ── EXPORTAR LIBRO CONTABLE CON FORMATO (igual al libro auxiliar de la empresa) ──
+var _excelJsCargando=null;
+function cargarExcelJS(){
+  if(window.ExcelJS)return Promise.resolve();
+  if(_excelJsCargando)return _excelJsCargando;
+  _excelJsCargando=new Promise(function(ok,fail){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    s.onload=function(){ok();};s.onerror=function(){_excelJsCargando=null;fail(new Error('No cargo ExcelJS'));};
+    document.head.appendChild(s);
+  });
+  return _excelJsCargando;
+}
 function exportarExcelContable(){
+  toast('Preparando el Excel...');
+  cargarExcelJS().then(generarLibroAuxiliar).catch(function(e){
+    console.error(e);
+    toast('No se pudo cargar el formato del Excel (revisa internet). Se descarga en formato simple.',1);
+    exportarExcelContableSimple();
+  });
+}
+function lxDetalle(m){
+  var d=String(m.desc||'');
+  var v=m.refVentaId?ven.find(function(x){return x.id===m.refVentaId;}):null;
+  var fac=v&&(v.fv||v.numFac)?'FAC:'+(v.fv||v.numFac):'';
+  var r=m.refRecaudoId?recaudos.find(function(x){return x.id===m.refRecaudoId;}):null;
+  if(r){var c=r.cliente||{};return ('CUOTA SISTECREDITO '+[c.nombre,c.apellido].filter(Boolean).join(' ')).toUpperCase();}
+  var reglas=[[/^Venta efectivo:\s*/i,fac?fac+' ':'VENTA '],[/^Efectivo complementario Sistecredito:\s*/i,(fac?fac+' ':'')+'EFECTIVO SISTECREDITO '],
+    [/^Cuota inicial Credicontado[^:]*:\s*/i,(fac?fac+' ':'')+'CUOTA INICIAL '],[/^Abono Credicontado:\s*/i,'ABONO '+(fac?fac+' ':'')]];
+  for(var k=0;k<reglas.length;k++){if(reglas[k][0].test(d)){d=d.replace(reglas[k][0],reglas[k][1]);break;}}
+  return d.toUpperCase();
+}
+function lxDocFisico(m){
+  if(m.ds)return 'DS'+m.ds;
+  var r=m.refRecaudoId?recaudos.find(function(x){return x.id===m.refRecaudoId;}):null;
+  if(r&&r.rc)return 'RC'+r.rc;
+  return '';
+}
+function lxTipo(m){
+  if(m.categoria==='Traslado de caja')return 'envio';
+  if(m.refRecaudoId||/^(Abono|Cuota inicial)/i.test(m.desc||''))return 'abono';
+  if((m.egr||0)>0)return 'gasto';
+  return '';
+}
+function generarLibroAuxiliar(){
+  var MES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  var selM=g('cont-exp-mes'),selA=g('cont-exp-anio');
+  var mesSel=selM?+selM.value:-1,anio=selA?+selA.value:new Date().getFullYear();
+  function partes(f){var p=(normFechaGlobal(f)||'').split('/');return p.length===3?{d:+p[0],m:+p[1]-1,a:+p[2]}:null;}
+  var movs=cont.map(function(c){var p=partes(c.fecha);return p?{c:c,p:p,ms:new Date(p.a,p.m,p.d).getTime()}:null;}).filter(Boolean)
+    .sort(function(a,b){return a.ms!==b.ms?a.ms-b.ms:(a.c.ts||0)-(b.c.ts||0);});
+  var meses=[];
+  if(mesSel>=0)meses=[mesSel];
+  else{for(var mm=0;mm<12;mm++){if(movs.some(function(x){return x.p.a===anio&&x.p.m===mm;}))meses.push(mm);}}
+  if(!meses.length){toast('No hay movimientos en ese periodo',1);return;}
+  var wb=new ExcelJS.Workbook();wb.creator=empNombre();
+  var F={azul:'FF9DC3E6',verdeH:'FFA9D08E',verde:'FFE2EFDA',rosaH:'FFF4B084',rosa:'FFFCE4D6',oroH:'FFFFD966',oro:'FFFFF2CC',amarillo:'FFFFFF00',envio:'FFB4C6E7',gasto:'FFEA9999'};
+  function fill(cell,c){cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:c}};}
+  var borde={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+  var fmtPeso='"$"#,##0',fmtSaldo='_("$"* #,##0_);_("$"* (#,##0);_("$"* "-"_);_(@_)';
+  meses.forEach(function(m){
+    var inicioMs=new Date(anio,m,1).getTime();
+    var saldoPrev=movs.filter(function(x){return x.ms<inicioMs;}).reduce(function(s,x){return s+(x.c.ing||0)-(x.c.egr||0);},0);
+    var delMes=movs.filter(function(x){return x.p.a===anio&&x.p.m===m;});
+    var ws=wb.addWorksheet(MES[m]+'-'+String(anio).slice(-2),{views:[{state:'frozen',ySplit:7,showGridLines:true}],pageSetup:{orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+    ws.columns=[{width:17},{width:8},{width:20},{width:46},{width:13},{width:13},{width:13},{width:13},{width:18}];
+    var tFont={name:'Times New Roman',size:12,bold:true};
+    function titulo(fila,texto){ws.mergeCells('C'+fila+':I'+fila);var c=ws.getCell('C'+fila);c.value=texto;c.font=tFont;c.alignment={horizontal:'center'};}
+    titulo(1,empNombre().toUpperCase());
+    titulo(2,'SEDE '+String((cfg.ciudad||'').split(',')[0]||'').toUpperCase());
+    titulo(4,'LIBRO AUXILIAR CONTABLE - AÑO '+anio);
+    ws.mergeCells('C6:I6');var h=ws.getCell('C6');h.value=MES[m]+' '+anio;h.font={name:'Times New Roman',size:13,bold:true};h.alignment={horizontal:'center'};fill(h,F.azul);
+    ['C6','D6','E6','F6','G6','H6','I6'].forEach(function(a){ws.getCell(a).border=borde;});
+    var heads=['FECHA','DETALLE','DOC FISICO','DOC SISTEMA','INGRESOS','EGRESOS','SALDO'];
+    heads.forEach(function(t,k){var c=ws.getRow(7).getCell(3+k);c.value=t;c.font={bold:true,italic:true,size:11,name:'Calibri'};c.alignment={horizontal:'center'};c.border=borde;
+      if(k===4)fill(c,F.verdeH);else if(k===5)fill(c,F.rosaH);else if(k===6)fill(c,F.oroH);});
+    // Leyenda
+    [['ABONOS O CUOTAS',F.amarillo],['ENVIOS',F.envio],['GASTOS',F.gasto]].forEach(function(l,k){var c=ws.getCell('A'+(9+k));c.value=l[0];c.font={size:11,name:'Calibri'};fill(c,l[1]);c.border=borde;});
+    function estiloFila(r,tipo){
+      for(var col=3;col<=9;col++){var c=r.getCell(col);c.border=borde;c.font=c.font||{size:11,name:'Calibri'};}
+      fill(r.getCell(7),F.verde);fill(r.getCell(8),F.rosa);fill(r.getCell(9),F.oro);
+      r.getCell(7).numFmt=fmtPeso;r.getCell(8).numFmt=fmtPeso;r.getCell(9).numFmt=fmtSaldo;
+      r.getCell(3).alignment={horizontal:'center'};r.getCell(5).alignment={horizontal:'left'};
+      if(tipo==='abono')fill(r.getCell(4),F.amarillo);else if(tipo==='envio')fill(r.getCell(4),F.envio);else if(tipo==='gasto')fill(r.getCell(4),F.gasto);
+    }
+    var r8=ws.getRow(8);r8.getCell(4).value='SALDO QUE VIENE MES PASADO';r8.getCell(4).font={bold:true,size:11,name:'Calibri'};
+    r8.getCell(7).value=saldoPrev;r8.getCell(9).value={formula:'G8-H8',result:saldoPrev};estiloFila(r8,'');
+    var saldo=saldoPrev,fila=9;
+    delMes.forEach(function(x){
+      var c=x.c,r=ws.getRow(fila);saldo+=(c.ing||0)-(c.egr||0);
+      r.getCell(3).value=new Date(Date.UTC(x.p.a,x.p.m,x.p.d));r.getCell(3).numFmt='m/d/yyyy';
+      r.getCell(4).value=lxDetalle(c);
+      r.getCell(5).value=lxDocFisico(c);
+      r.getCell(6).value='';
+      if(c.ing>0)r.getCell(7).value=c.ing;
+      if(c.egr>0)r.getCell(8).value=c.egr;
+      r.getCell(9).value={formula:'I'+(fila-1)+'+G'+fila+'-H'+fila,result:saldo};
+      estiloFila(r,lxTipo(c));
+      for(var col=3;col<=9;col++)r.getCell(col).font={size:11,name:'Calibri'};
+      fila++;
+    });
+    // Totales
+    var rt=ws.getRow(fila);
+    rt.getCell(4).value='TOTALES DEL MES';
+    rt.getCell(7).value={formula:'SUM(G9:G'+(fila-1<9?9:fila-1)+')',result:delMes.reduce(function(s,x){return s+(x.c.ing||0);},0)};
+    rt.getCell(8).value={formula:'SUM(H9:H'+(fila-1<9?9:fila-1)+')',result:delMes.reduce(function(s,x){return s+(x.c.egr||0);},0)};
+    rt.getCell(9).value={formula:'I'+(fila-1),result:saldo};
+    estiloFila(rt,'');for(var col=3;col<=9;col++)rt.getCell(col).font={bold:true,size:11,name:'Calibri'};
+  });
+  wb.xlsx.writeBuffer().then(function(buf){
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=(cfg.nombre||'Empresa').replace(/\s+/g,'_')+'_Libro_Auxiliar_'+(mesSel>=0?MES[mesSel]+'_':'')+anio+'.xlsx';
+    document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+    toast('Excel descargado');
+  });
+}
+
+function exportarExcelContableSimple(){
   if(typeof XLSX==='undefined'){toast('La libreria de Excel aun esta cargando, intenta de nuevo en un momento',1);return;}
   try{
     var MESES_EXP=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
