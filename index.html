@@ -401,6 +401,8 @@ label{color:#4a6a83}
 .fv-box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:2px solid #2e8fd6;border-left:6px solid #27ae60;border-radius:12px;padding:12px 16px;margin-bottom:12px;box-shadow:0 3px 12px rgba(46,143,214,.1)}
 .fv-box label{margin:0!important;font-size:20px!important;font-weight:800!important;color:#1b6ca8!important;letter-spacing:.5px}
 .fv-box input{width:140px!important;font-size:22px!important;font-weight:800;letter-spacing:4px;text-align:center;padding:8px 10px;border:2px solid #cfe6f5;color:#1b6ca8}
+.doc-sis-in{width:110px;padding:4px 6px!important;font-size:11px!important;font-weight:600;color:#555;text-transform:uppercase;margin:0!important}
+@media(max-width:900px){.cont-form-grid{grid-template-columns:1fr 1fr!important}}
 .ds-box{padding:8px 14px}.ds-box label{font-size:17px!important}.ds-box input{width:120px!important;font-size:18px!important;padding:6px 8px}
 .fv-box input.fv-err{border-color:#e74c3c;background:#fdedec;animation:sacudir .3s}
 @keyframes sacudir{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -1103,12 +1105,13 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
     <div class="met"><div class="ml">Clientes registrados</div><div class="mv" id="cli-k-total">0</div></div>
     <div class="met"><div class="ml">Nuevos este mes</div><div class="mv" id="cli-k-nuevos" style="color:#2980b9">0</div></div>
     <div class="met"><div class="ml">Clientes que repiten</div><div class="mv" id="cli-k-repiten" style="color:#1e8449">0</div></div>
-    <div class="met"><div class="ml">Nos deben (Credicontado)</div><div class="mv" id="cli-k-deben" style="color:#c0392b">$0</div><div style="font-size:10px;color:#888;margin-top:2px" id="cli-k-deben-n"></div></div>
+    <div class="met"><div class="ml">Nos deben</div><div class="mv" id="cli-k-deben" style="color:#c0392b">$0</div><div style="font-size:10px;color:#888;margin-top:2px" id="cli-k-deben-n"></div></div>
   </div>
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
       <h2 style="margin-bottom:0">Clientes</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label class="btn admin-only-blk btn-import" title="Crear clientes desde un Excel (NIT/CEDULA, NOMBRE, TELEFONO, DIR, SALDO, MORA, FACTURA)" style="margin:0!important">&#8679; Importar Excel<input type="file" id="cli-import-file" accept=".xlsx,.xls,.csv" onchange="importarClientesExcel(this)" style="display:none"></label>
         <button class="btn bgreen" onclick="exportarClientesExcel()" style="font-size:12px;padding:8px 14px;background:#1e8449">Exportar Excel</button>
         <button class="btn bgreen" onclick="abrirNuevoCliente()" style="font-size:12px;padding:8px 16px">+ Agregar cliente</button>
       </div>
@@ -1142,6 +1145,25 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
       <thead id="carth"></thead>
       <tbody id="cartb"></tbody>
     </table></div></div>
+  </div>
+  <div class="card" id="cant-card">
+    <h2>Cartera anterior — facturas pendientes</h2>
+    <div style="font-size:11px;color:#888;margin-bottom:12px">Facturas que venian del sistema anterior. Al abonar, en el Libro Contable queda "ABONO FAC:2354 NOMBRE" o "PAGO TOTAL FAC:2354 NOMBRE" cuando se termina de pagar.</div>
+    <div class="g4" style="margin-bottom:12px">
+      <div class="met"><div class="ml">Facturas pendientes</div><div class="mv" id="cant-k-n">0</div></div>
+      <div class="met"><div class="ml">Por cobrar</div><div class="mv" id="cant-k-tot" style="color:#c0392b">$0</div></div>
+      <div class="met"><div class="ml">Con mora</div><div class="mv" id="cant-k-mora" style="color:#e67e22">0</div></div>
+      <div class="met"><div class="ml">Cobrado</div><div class="mv" id="cant-k-cob" style="color:#1e8449">$0</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button id="cant-btn-pend" class="btn bblue" onclick="setCantVista('pend')" style="padding:8px 16px;font-size:12px">Por cobrar</button>
+      <button id="cant-btn-pag" class="btn bgray" onclick="setCantVista('pag')" style="padding:8px 16px;font-size:12px">Pagadas</button>
+    </div>
+    <input type="text" id="cant-buscar" placeholder="Buscar por cliente, cedula, telefono o numero de factura..." oninput="renderCartAnt()" style="margin-bottom:12px;text-transform:none">
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Cliente</th><th>Telefono</th><th>Factura</th><th>Fecha</th><th style="text-align:center">Mora</th><th style="text-align:right">Saldo inicial</th><th style="text-align:right">Abonado</th><th style="text-align:right">Debe</th><th></th></tr></thead>
+      <tbody id="cant-tb"></tbody>
+    </table></div>
   </div>
 </div>
 
@@ -1206,7 +1228,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
 <div id="tab-carteraglobal" class="sec">
   <div class="card">
     <h2>Cartera global</h2>
-    <div style="font-size:11px;color:#888;margin-bottom:14px">Resumen combinado de todo lo que el negocio tiene pendiente por cobrar: Credicontado, Separados y Fabricacion.</div>
+    <div style="font-size:11px;color:#888;margin-bottom:14px">Resumen combinado de todo lo que el negocio tiene pendiente por cobrar: Credicontado, Cartera anterior, Separados y Fabricacion.</div>
     <div class="g3" style="margin-bottom:18px">
       <div class="met"><div class="ml">Cartera Credicontado — por cobrar</div><div class="mv" id="cg-credicontado" style="color:#27ae60">$0</div></div>
       <div class="met met-az"><div class="ml">Separados y fabricacion — por cobrar</div><div class="mv" id="cg-financiera" style="color:#2e8fd6">$0</div></div>
@@ -1486,11 +1508,12 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
   </div>
   <div class="card" style="margin-bottom:14px" id="cont-registrar-card">
     <h2>Registrar movimiento manual</h2>
-    <div style="display:grid;grid-template-columns:140px 1fr 140px 140px auto;gap:10px;align-items:end">
+    <div class="cont-form-grid" style="display:grid;grid-template-columns:140px 1fr 140px 140px 150px auto;gap:10px;align-items:end">
       <div><label>Fecha</label><input type="date" id="cont-fecha" class="noup"></div>
       <div><label>Descripcion</label><input type="text" id="cont-desc" placeholder="Ej: Compra mercancia, pago servicios..."></div>
       <div><label style="color:#1e8449">Ingreso $</label><input type="number" id="cont-ing" class="noup" placeholder="0" style="border-color:#a9dfbf;background:#f0fff4;color:#1e8449;font-weight:600" oninput="toggleContCat()"></div>
       <div><label style="color:#c0392b">Egreso $</label><input type="number" id="cont-egr" class="noup" placeholder="0" style="border-color:#f5b7b1;background:#fff5f5;color:#c0392b;font-weight:600" oninput="toggleContCat()"></div>
+      <div><label>Doc. sistema</label><input type="text" id="cont-docsis" class="noup" placeholder="Ej: EG3-880" autocomplete="off" style="text-transform:uppercase"></div>
       <div><button class="btn bg" onclick="addContable()" style="margin-top:0;padding:10px 18px;white-space:nowrap">Agregar</button></div>
     </div>
     <div id="cont-cat-wrap" style="display:none;margin-top:10px">
@@ -1544,13 +1567,13 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
   <div class="card">
     <h2>Movimientos</h2>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-      <input type="text" id="cont-buscar" placeholder="Buscar por fecha, descripcion o DS..." oninput="renderContable()" style="margin-bottom:0;flex:1;text-transform:none">
+      <input type="text" id="cont-buscar" placeholder="Buscar por fecha, detalle, FV, RC, DS o doc. sistema..." oninput="renderContable()" style="margin-bottom:0;flex:1;text-transform:none">
       <button id="cont-undo" onclick="contDeshacer()" title="Deshacer" style="min-width:38px;height:38px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:16px;cursor:pointer;opacity:0.35;transition:opacity .2s">↩</button>
       <button id="cont-redo" onclick="contRehacer()" title="Rehacer" style="min-width:38px;height:38px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:16px;cursor:pointer;opacity:0.35;transition:opacity .2s">↪</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr>
-        <th>Fecha</th><th>Descripcion</th><th>Categoria</th>
+        <th>Fecha</th><th>Detalle</th><th>Categoria</th><th>Doc fisico</th><th>Doc sistema</th>
         <th style="text-align:right;background:#f0fff4;color:#1e8449">Ingreso</th>
         <th style="text-align:right;background:#fff5f5;color:#c0392b">Egreso</th>
         <th style="text-align:right;background:#eaf4ff;color:#1a5276">Total acumulado</th>
@@ -2062,6 +2085,7 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
         <option value="Traslado de caja">Traslado de caja</option>
           <option value="Ingreso por ventas">Ingreso por ventas</option>
         </select>
+        <div style="margin-top:10px"><label>Doc. sistema</label><input type="text" id="ec-docsis" class="noup" placeholder="Ej: RC3-1134" style="text-transform:uppercase"></div>
         <div id="ec-ds-wrap" style="display:none;margin-top:10px"><label>DS - Comprobante de egreso</label><input type="text" id="ec-ds" inputmode="numeric" maxlength="12" placeholder="0000" class="noup" oninput="this.value=this.value.replace(/\D/g,'')" style="font-weight:700;letter-spacing:2px;color:#1b6ca8"></div>
       </div>
     </div>
@@ -2144,6 +2168,29 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
 </div>
 
 <!-- MODAL AGREGAR/EDITAR CLIENTE -->
+<div class="mb" id="m-cartant">
+  <div class="md" style="max-width:440px">
+    <h3 id="cab-tit">Abono</h3>
+    <div style="font-weight:700;color:#1e7e45;margin-bottom:8px" id="cab-cli"></div>
+    <div class="resumen-ped" id="cab-info" style="display:flex;margin-bottom:12px"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div style="flex:1"><label>Valor del abono $</label><input type="text" inputmode="numeric" id="cab-monto" class="noup" placeholder="$ 0" oninput="fmtInputPesos(this);cabCalc()" style="font-size:16px;font-weight:700;color:#1e8449"></div>
+        <button class="btn bgray" onclick="cabPagarTodo()" style="padding:10px 12px;font-size:11px;white-space:nowrap">Pagar todo</button>
+      </div>
+      <div id="cab-prev" style="font-size:12px"></div>
+      <div class="g3">
+        <div><label>RC</label><input type="text" id="cab-rc" inputmode="numeric" class="noup" placeholder="Opcional" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div><label>Fecha</label><input type="date" id="cab-fecha" class="noup"></div>
+        <div><label>Medio</label><select id="cab-medio"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Otro</option></select></div>
+      </div>
+    </div>
+    <div class="mdf">
+      <button class="btn bgray" onclick="cm('m-cartant')">Cancelar</button>
+      <button class="btn bg" onclick="guardarAbonoCartAnt()">Registrar abono</button>
+    </div>
+  </div>
+</div>
 <div class="mb" id="m-cliente-form">
   <div class="md" style="max-width:460px">
     <h3 id="clif-titulo">Agregar cliente</h3>
@@ -5574,7 +5621,8 @@ function renderCarteraGlobal(){
   var pedAct=pedidos.filter(function(p){return p.estado==='activo'&&pedSaldo(p)>0;});
   var sepAct=pedAct.filter(function(p){return p.tipo==='SEP';}),fabAct=pedAct.filter(function(p){return p.tipo==='FAB';});
   var totSep=sepAct.reduce(function(s,p){return s+pedSaldo(p);},0),totFab=fabAct.reduce(function(s,p){return s+pedSaldo(p);},0);
-  var totalCombinado=pendCC+totFin+totSep+totFab;
+  var facAnt=facturasCartAnt(true),totAnt=facAnt.reduce(function(s,x){return s+facSaldo(x.f);},0);
+  var totalCombinado=pendCC+totFin+totSep+totFab+totAnt;
   if(g('cg-credicontado'))g('cg-credicontado').textContent=fmt(pendCC);
   if(g('cg-financiera'))g('cg-financiera').textContent=fmt(totSep+totFab);
   if(g('cg-total'))g('cg-total').textContent=fmt(totalCombinado);
@@ -5583,7 +5631,8 @@ function renderCarteraGlobal(){
     '<tr><td>Cartera Credicontado</td><td style="text-align:center">'+cuentasCC+'</td><td style="text-align:right;font-weight:700;color:#27ae60">'+fmt(pendCC)+'</td></tr>'+
     '<tr><td>Separados</td><td style="text-align:center">'+sepAct.length+'</td><td style="text-align:right;font-weight:700;color:#2e8fd6">'+fmt(totSep)+'</td></tr>'+
     '<tr><td>Fabricacion</td><td style="text-align:center">'+fabAct.length+'</td><td style="text-align:right;font-weight:700;color:#16a085">'+fmt(totFab)+'</td></tr>'+
-    '<tr class="total-row" style="background:#f0f7ff;font-weight:700"><td>Total</td><td style="text-align:center">'+(cuentasCC+finPend.length+sepAct.length+fabAct.length)+'</td><td style="text-align:right;color:#1e8449">'+fmt(totalCombinado)+'</td></tr>';
+    '<tr><td>Cartera anterior (facturas)</td><td style="text-align:center">'+facAnt.length+'</td><td style="text-align:right;font-weight:700;color:#c0392b">'+fmt(totAnt)+'</td></tr>'+
+    '<tr class="total-row" style="background:#f0f7ff;font-weight:700"><td>Total</td><td style="text-align:center">'+(cuentasCC+finPend.length+sepAct.length+fabAct.length+facAnt.length)+'</td><td style="text-align:right;color:#1e8449">'+fmt(totalCombinado)+'</td></tr>';
 }
 function renderCartFinanciera(){
   var tb=g('cart-fin-tb');
@@ -7312,6 +7361,7 @@ function addContable(){
     egr:egr,
     categoria:cat||'',
     ds:ds||'',
+    docSis:((g('cont-docsis')||{value:''}).value||'').trim().toUpperCase(),
     tipo:'manual',
     ts:Date.now(),
     quien:_quien,
@@ -7322,6 +7372,7 @@ function addContable(){
   g('cont-fecha').value=fechaHoyISO();g('cont-desc').value='';
   if(g('cont-cat'))g('cont-cat').value='';
   if(g('cont-ds'))g('cont-ds').value='';
+  if(g('cont-docsis'))g('cont-docsis').value='';
   g('cont-ing').value='';g('cont-egr').value='';
   toggleContCat();
   renderContable();
@@ -7356,19 +7407,28 @@ function lxDetalle(m){
   var r=m.refRecaudoId?recaudos.find(function(x){return x.id===m.refRecaudoId;}):null;
   if(r){var c=r.cliente||{};return ('CUOTA SISTECREDITO '+[c.nombre,c.apellido].filter(Boolean).join(' ')).toUpperCase();}
   var reglas=[[/^Venta efectivo:\s*/i,fac?fac+' ':'VENTA '],[/^Efectivo complementario Sistecredito:\s*/i,(fac?fac+' ':'')+'EFECTIVO SISTECREDITO '],
-    [/^Cuota inicial Credicontado[^:]*:\s*/i,(fac?fac+' ':'')+'CUOTA INICIAL '],[/^Abono Credicontado:\s*/i,'ABONO '+(fac?fac+' ':'')]];
+    [/^Cuota inicial Credicontado[^:]*:\s*/i,(fac?fac+' ':'')+'CUOTA INICIAL '],[/^Abono Credicontado:\s*/i,(lxEsUltimoAbono(m,v)?'PAGO TOTAL ':'ABONO ')+(fac?fac+' ':'')]];
   for(var k=0;k<reglas.length;k++){if(reglas[k][0].test(d)){d=d.replace(reglas[k][0],reglas[k][1]);break;}}
   return d.toUpperCase();
+}
+function lxEsUltimoAbono(m,v){
+  if(!v||typeof saldoPendienteVenta!=='function')return false;
+  try{if(saldoPendienteVenta(v)>0)return false;}catch(e){return false;}
+  var ult=null;cont.forEach(function(c){if(c.refVentaId===v.id&&/^Abono Credicontado/.test(c.desc||'')&&(!ult||(c.ts||0)>=(ult.ts||0)))ult=c;});
+  return ult===m;
 }
 function lxDocFisico(m){
   if(m.ds)return 'DS'+m.ds;
   var r=m.refRecaudoId?recaudos.find(function(x){return x.id===m.refRecaudoId;}):null;
   if(r&&r.rc)return 'RC'+r.rc;
+  if(m.rcFis)return 'RC'+m.rcFis;
+  var v=m.refVentaId?ven.find(function(x){return x.id===m.refVentaId;}):null;
+  if(v&&(v.fv||v.numFac))return 'FV:'+(v.fv||v.numFac);
   return '';
 }
 function lxTipo(m){
   if(m.categoria==='Traslado de caja')return 'envio';
-  if(m.refRecaudoId||/^(Abono|Cuota inicial)/i.test(m.desc||''))return 'abono';
+  if(m.refRecaudoId||m.refCartAnt||/^(Abono|Cuota inicial|Pago total)/i.test(m.desc||''))return 'abono';
   if((m.egr||0)>0)return 'gasto';
   return '';
 }
@@ -7421,7 +7481,7 @@ function generarLibroAuxiliar(){
       r.getCell(3).value=new Date(Date.UTC(x.p.a,x.p.m,x.p.d));r.getCell(3).numFmt='m/d/yyyy';
       r.getCell(4).value=lxDetalle(c);
       r.getCell(5).value=lxDocFisico(c);
-      r.getCell(6).value='';
+      r.getCell(6).value=c.docSis||'';
       if(c.ing>0)r.getCell(7).value=c.ing;
       if(c.egr>0)r.getCell(8).value=c.egr;
       r.getCell(9).value={formula:'I'+(fila-1)+'+G'+fila+'-H'+fila,result:saldo};
@@ -7632,7 +7692,7 @@ function editContable(i){
   sv('ec-ing',c.ing||'');
   sv('ec-egr',c.egr||'');
   if(g('ec-cat'))g('ec-cat').value=c.categoria||'';
-  sv('ec-ds',c.ds||'');
+  sv('ec-ds',c.ds||'');sv('ec-docsis',c.docSis||'');
   toggleEcCat();
   // Convert fecha DD/MM/YYYY to YYYY-MM-DD for date input
   var fp=(normFechaGlobal(c.fecha)||c.fecha||'').split('/');
@@ -7677,6 +7737,7 @@ function guardarEditContable(){
   cont[i].egr=egr;
   cont[i].categoria=cat||'';
   cont[i].ds=dsE||'';
+  cont[i].docSis=((g('ec-docsis')||{value:''}).value||'').trim().toUpperCase();
   cont[i].ts=parseTS(fechaFmt,0);
   var extraSync='';
   if(vLink){
@@ -7878,6 +7939,7 @@ function delContable(i){
   // indexOf daria -1 y splice(-1) borraria por error el ULTIMO movimiento del libro)
   if(mov&&mov.refPedidoId)extra+=pedQuitarAbonoDesdeContable(mov);
   if(mov&&mov.refRecaudoId)extra+=rcQuitarDesdeContable(mov);
+  if(mov&&mov.refCartAnt)extra+=cartAntQuitarDesdeContable(mov);
   var idxMovDel=cont.indexOf(mov);if(idxMovDel>=0)cont.splice(idxMovDel,1);
   try{localStorage.setItem(CK,JSON.stringify(cont));}catch(e){}
   logActividad('Contable','Elimino movimiento: '+(mov?mov.desc:''));
@@ -7947,6 +8009,7 @@ function renderContable(){
   });
   var filtered=withIdx.filter(function(x){
     if(!q)return true;
+    var _t=(lxDetalle(x.m)+' '+lxDocFisico(x.m)+' '+(x.m.docSis||'')).toLowerCase();if(_t.indexOf(q)>=0||_t.replace(/[:\-]/g,'').indexOf(q.replace(/[:\-]/g,''))>=0)return true;
     return x.m.desc.toLowerCase().indexOf(q)>=0||x.m.fecha.indexOf(q)>=0||(x.m.categoria||'').toLowerCase().indexOf(q)>=0||(x.m.ds&&(('ds-'+x.m.ds).indexOf(q)>=0||String(x.m.ds).indexOf(q)>=0));
   });
 
@@ -7997,7 +8060,7 @@ function renderContable(){
   if(cpw)cpw.innerHTML=pagWidget('cont',contPage,total,CONT_PER_PAGE,'setContPage');
 
   if(!paginada.length){
-    tb.innerHTML='<tr><td colspan="7" class="empty">'+(q?'Sin resultados':'Sin movimientos registrados')+'</td></tr>';
+    tb.innerHTML='<tr><td colspan="10" class="empty">'+(q?'Sin resultados':'Sin movimientos registrados')+'</td></tr>';
     return;
   }
 
@@ -8008,8 +8071,10 @@ function renderContable(){
     var horaLabel=m.hora||'';
     return '<tr>'+
       '<td style="font-size:11px;color:#888">'+m.fecha+'</td>'+
-      '<td style="font-weight:500">'+m.desc+autoLabel+'</td>'+
-      '<td style="font-size:11px;color:'+(m.categoria?'#555':'#ccc')+'">'+(m.categoria||'-')+(m.ds?'<div style="font-weight:700;color:#1b6ca8;font-size:11px">DS-'+m.ds+'</div>':'')+'</td>'+
+      '<td style="font-weight:500" title="'+escAttrCont(m.desc)+'">'+lxDetalle(m)+autoLabel+'</td>'+
+      '<td style="font-size:11px;color:'+(m.categoria?'#555':'#ccc')+'">'+(m.categoria||'-')+'</td>'+
+      '<td style="font-weight:700;color:#1b6ca8;white-space:nowrap;font-size:12px">'+(lxDocFisico(m)||'<span style="color:#ccc">-</span>')+'</td>'+
+      '<td>'+(getPerm('contable-edit')?'<input type="text" class="noup doc-sis-in" value="'+escAttrCont(m.docSis||'')+'" placeholder="-" onchange="contSetDocSis('+idx+',this)" onkeydown="if(event.key===\'Enter\')this.blur()">':(m.docSis||'-'))+'</td>'+
       '<td style="text-align:right;background:#f0fff4;font-weight:600;color:#1e8449">'+(m.ing>0?fmt(m.ing):'—')+'</td>'+
       '<td style="text-align:right;background:#fff5f5;font-weight:600;color:#c0392b">'+(m.egr>0?fmt(m.egr):'—')+'</td>'+
       '<td style="text-align:right;background:#eaf4ff;font-weight:700;color:'+(acum>=0?'#1a5276':'#e74c3c')+'">'+fmt(acum)+'</td>'+
@@ -8028,6 +8093,19 @@ function renderContable(){
 }
 
 function setContPage(p){contPage=p;renderContable();}
+function escAttrCont(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function contSetDocSis(idx,el){
+  if(!getPerm('contable-edit')){toast('No tienes permiso para modificar el libro contable',1);return;}
+  if(sinConexionActiva()){toast('Sin conexion a internet. No se puede guardar en este momento.',1);el.value=cont[idx]?cont[idx].docSis||'':'';return;}
+  var m=cont[idx];if(!m)return;
+  var v=(el.value||'').trim().toUpperCase();el.value=v;
+  if((m.docSis||'')===v)return;
+  m.docSis=v;
+  try{localStorage.setItem(CK,JSON.stringify(cont));}catch(e){}
+  save();
+  el.style.borderColor='#27ae60';setTimeout(function(){el.style.borderColor='';},900);
+  toast(v?'Doc. sistema guardado: '+v:'Doc. sistema borrado');
+}
 
 function renderContableCategorias(){
   var wrap=g('cont-cat-resumen');
@@ -8350,7 +8428,8 @@ function renderClientes(){
     return Object.assign({},c,{
       _total:compras.reduce(function(s,v){return s+(v.total||0);},0),
       _num:compras.length,
-      _debe:compras.reduce(function(s,v){return s+saldoPendienteVenta(v);},0),
+      _debe:compras.reduce(function(s,v){return s+saldoPendienteVenta(v);},0)+(c.facturas||[]).reduce(function(s,f){return s+facSaldo(f);},0),
+      _mora:(c.facturas||[]).reduce(function(m,f){return Math.max(m,moraActual(f));},0),
       _nuevo:fechaEsMesActual(primera?primera.fecha:c.fechaRegistro)
     });
   });
@@ -8367,6 +8446,10 @@ function renderClientes(){
   if(g('cli-k-deben-n'))g('cli-k-deben-n').textContent=deben.length?(deben.length+' cliente'+(deben.length>1?'s':'')):'';
   // Filtros
   var filtros=[['todos','Todos',todos.length],['deben','Nos deben',deben.length],['repiten','Repiten (2+ compras)',todos.filter(function(c){return c._num>=2;}).length],['nuevos','Nuevos del mes',todos.filter(function(c){return c._nuevo;}).length],['sincompras','Sin compras',todos.filter(function(c){return c._num===0;}).length]];
+  var nMora=todos.filter(function(c){return c._mora>0;}).length;
+  if(nMora)filtros.splice(2,0,['mora','Con mora',nMora]);
+  var nSis=todos.filter(function(c){return c.siste;}).length;
+  if(nSis)filtros.push(['siste','Sistecredito',nSis]);
   var nDup=todos.filter(function(c){return c._dup;}).length;
   if(nDup)filtros.push(['repetidos','Posibles repetidos',nDup]);
   else if(cliFiltro==='repetidos')cliFiltro='todos';
@@ -8382,12 +8465,15 @@ function renderClientes(){
   else if(cliFiltro==='nuevos')lista=lista.filter(function(c){return c._nuevo;});
   else if(cliFiltro==='sincompras')lista=lista.filter(function(c){return c._num===0;});
   else if(cliFiltro==='repetidos')lista=lista.filter(function(c){return c._dup;});
+  else if(cliFiltro==='mora')lista=lista.filter(function(c){return c._mora>0;});
+  else if(cliFiltro==='siste')lista=lista.filter(function(c){return c.siste;});
   if(q){
     lista=lista.filter(function(c){
-      return coincide(c.nombre+' '+c.apellido+' '+(c.cedula||'')+' '+(c.tel||'')+' '+(c.barrio||''),q);
+      return coincide(c.nombre+' '+c.apellido+' '+(c.cedula||'')+' '+(c.tel||'')+' '+(c.barrio||'')+' '+(c.facturas||[]).map(function(f){return 'FAC '+f.fac;}).join(' ')+(c.siste?' SISTECREDITO':''),q);
     });
   }
   if(cliFiltro==='deben')lista.sort(function(a,b){return b._debe-a._debe;});
+  else if(cliFiltro==='mora')lista.sort(function(a,b){return b._mora-a._mora;});
   else if(cliFiltro==='repetidos')lista.sort(function(a,b){return ((a.cedula||'')+nombreCliente(a)).localeCompare((b.cedula||'')+nombreCliente(b));});
   else lista.sort(function(a,b){return b._total-a._total;});
   var total=lista.length;
@@ -8400,7 +8486,8 @@ function renderClientes(){
   tb.innerHTML=pagina.length?pagina.map(function(c){
     var wa=telWhatsApp(c.tel);
     return '<tr style="cursor:pointer" onclick="verClienteDetalle(\''+c.id+'\')">'+
-      '<td style="font-weight:700">'+(nombreCliente(c)||'Sin nombre')+(c._nuevo?' <span style="font-size:9px;background:#ebf5fb;color:#2980b9;padding:1px 6px;border-radius:8px;font-weight:700">NUEVO</span>':'')+(c._dup?' <span title="Puede estar repetido: usa la X y elige Unir" style="font-size:9px;background:#fef5e7;color:#d35400;padding:1px 6px;border-radius:8px;font-weight:700">REPETIDO?</span>':'')+'</td>'+
+      '<td style="font-weight:700">'+(nombreCliente(c)||'Sin nombre')+(c._nuevo?' <span style="font-size:9px;background:#ebf5fb;color:#2980b9;padding:1px 6px;border-radius:8px;font-weight:700">NUEVO</span>':'')+(c._dup?' <span title="Puede estar repetido: usa la X y elige Unir" style="font-size:9px;background:#fef5e7;color:#d35400;padding:1px 6px;border-radius:8px;font-weight:700">REPETIDO?</span>':'')+(c.siste?' <span style="font-size:9px;background:#e0f5f3;color:#00847a;padding:1px 6px;border-radius:8px;font-weight:700">SISTECREDITO</span>':'')+
+        ((c.facturas||[]).filter(function(f){return facSaldo(f)>0;}).length?'<div style="font-size:10px;font-weight:600;color:'+(c._mora>0?'#c0392b':'#888')+';margin-top:2px">'+(c.facturas||[]).filter(function(f){return facSaldo(f)>0;}).map(function(f){return 'FAC:'+f.fac+' debe '+fmt(facSaldo(f))+(moraActual(f)>0?' · mora '+moraActual(f)+' dias':' · al dia');}).join('<br>')+'</div>':'')+'</td>'+
       '<td data-l="Cedula">'+(c.cedula||'-')+'</td>'+
       '<td data-l="Telefono">'+(c.tel||'-')+'</td>'+
       '<td data-l="Barrio">'+(c.barrio||'-')+'</td>'+
@@ -8573,6 +8660,9 @@ function exportarClientesExcel(){
       'Total comprado':compras.reduce(function(s,v){return s+(v.total||0);},0),
       'Debe':compras.reduce(function(s,v){return s+saldoPendienteVenta(v);},0),
       'Ultima compra':compras.length?compras[0].fecha:'',
+      'Facturas cartera anterior':(c.facturas||[]).filter(function(f){return facSaldo(f)>0;}).map(function(f){return 'FAC '+f.fac;}).join(', '),
+      'Mora (dias)':(c.facturas||[]).reduce(function(m,f){return Math.max(m,moraActual(f));},0)||'',
+      'Sistecredito':c.siste?'SI':'',
       'Registrado':c.fechaRegistro||''
     };
   }).sort(function(a,b){return b['Total comprado']-a['Total comprado'];});
@@ -8595,7 +8685,7 @@ function verClienteDetalle(id){
   var datosEl=g('clid-datos');if(datosEl)datosEl.textContent=[c.cedula?('CC '+c.cedula):'',c.tel,c.barrio,c.fechaRegistro?('Cliente desde '+c.fechaRegistro):''].filter(Boolean).join(' — ')||'Sin datos adicionales';
   var numEl=g('clid-num');if(numEl)numEl.textContent=compras.length;
   var totEl=g('clid-total');if(totEl)totEl.textContent=fmt(compras.reduce(function(s,v){return s+(v.total||0);},0));
-  var debe=compras.reduce(function(s,v){return s+saldoPendienteVenta(v);},0);
+  var debe=compras.reduce(function(s,v){return s+saldoPendienteVenta(v);},0)+(c.facturas||[]).reduce(function(s,f){return s+facSaldo(f);},0);
   var debEl=g('clid-debe');if(debEl){debEl.textContent=debe>0?fmt(debe):'$0';debEl.style.color=debe>0?'#c0392b':'#1e8449';}
   var ultEl=g('clid-ultima');if(ultEl)ultEl.textContent=compras.length?compras[0].fecha:'-';
   var bWa=g('clid-btn-wa');if(bWa)bWa.style.display=telWhatsApp(c.tel)?'':'none';
@@ -9751,6 +9841,251 @@ function cedLimpia(v){v=String(v==null?'':v).trim();return v.replace(/\D/g,'').l
 function limpiarDetalleArt(d){
   return String(d||'').replace(/\s+/g,' ').trim().replace(/\s+(UNIDAD|UNIDADES|UND)$/i,'').trim().toUpperCase();
 }
+// ══ CARTERA ANTERIOR: facturas pendientes que venian del sistema viejo (importadas desde Excel) ══
+// Cada cliente puede tener c.facturas=[{id,fac,saldoIni,fecha,mora,corte,abonos:[{id,ts,fecha,monto,medio,rc,quien}]}]
+var cantVista='pend',cantSel=null;
+function facAbonado(f){return (f.abonos||[]).reduce(function(s,a){return s+(a.monto||0);},0);}
+function facSaldo(f){return Math.max(0,(f.saldoIni||0)-facAbonado(f));}
+function facturasCartAnt(soloPend){
+  var out=[];
+  clientes.forEach(function(c){(c.facturas||[]).forEach(function(f){if(!soloPend||facSaldo(f)>0)out.push({c:c,f:f});});});
+  return out;
+}
+function moraActual(f){
+  if(!(facSaldo(f)>0))return 0;
+  var base=+f.mora||0;
+  if(!f.corte||!(base>0))return base;
+  var p=f.corte.split('/');if(p.length!==3)return base;
+  var dias=Math.floor((Date.now()-new Date(+p[2],+p[1]-1,+p[0]).getTime())/86400000);
+  return base+Math.max(0,dias);
+}
+function renderCartAnt(){
+  var tb=g('cant-tb');if(!tb)return;
+  var pend=facturasCartAnt(true);
+  var todas=facturasCartAnt(false);
+  var tot=pend.reduce(function(s,x){return s+facSaldo(x.f);},0);
+  var conMora=pend.filter(function(x){return moraActual(x.f)>0;}).length;
+  if(g('cant-k-n'))g('cant-k-n').textContent=pend.length;
+  if(g('cant-k-tot'))g('cant-k-tot').textContent=fmt(tot);
+  if(g('cant-k-mora'))g('cant-k-mora').textContent=conMora;
+  var cobr=todas.reduce(function(s,x){return s+facAbonado(x.f);},0);
+  if(g('cant-k-cob'))g('cant-k-cob').textContent=fmt(cobr);
+  ['pend','pag'].forEach(function(k){var b=g('cant-btn-'+k);if(b)b.className='btn '+(cantVista===k?'bblue':'bgray');});
+  var lista=cantVista==='pend'?pend:todas.filter(function(x){return facSaldo(x.f)<=0;});
+  var q=((g('cant-buscar')||{value:''}).value||'').trim();
+  if(q)lista=lista.filter(function(x){var c=x.c;return coincide([nombreCliente(c),c.cedula,c.tel,c.barrio,'FAC '+x.f.fac,x.f.fac].join(' '),q);});
+  lista.sort(function(a,b){return cantVista==='pend'?moraActual(b.f)-moraActual(a.f):(b.f.abonos.length?b.f.abonos[b.f.abonos.length-1].ts:0)-(a.f.abonos.length?a.f.abonos[a.f.abonos.length-1].ts:0);});
+  if(!lista.length){tb.innerHTML='<tr><td colspan="9" class="empty">'+(q?'Sin resultados':(cantVista==='pend'?'No hay facturas pendientes de cartera anterior':'Aun no hay facturas pagadas'))+'</td></tr>';return;}
+  tb.innerHTML=lista.map(function(x){
+    var c=x.c,f=x.f,deb=facSaldo(f),mora=moraActual(f);
+    var colM=mora>90?'#c0392b':(mora>30?'#e67e22':(mora>0?'#d4ac0d':'#27ae60'));
+    var wa=telWhatsApp(c.tel);
+    return '<tr>'+
+      '<td style="font-weight:700">'+nombreCliente(c)+'<div style="font-size:10px;color:#888;font-weight:400">'+[c.cedula?'CC '+c.cedula:'',c.barrio].filter(Boolean).join(' — ')+'</div></td>'+
+      '<td data-l="Telefono">'+(c.tel||'-')+'</td>'+
+      '<td data-l="Factura" style="font-weight:700;color:#1b6ca8;white-space:nowrap">FAC:'+f.fac+'</td>'+
+      '<td data-l="Fecha" style="font-size:11px;color:#888">'+(f.fecha||'-')+'</td>'+
+      '<td data-l="Mora" style="text-align:center"><span style="font-weight:700;color:'+colM+'">'+(deb>0?mora+' dias':'Pagada')+'</span></td>'+
+      '<td data-l="Saldo inicial" style="text-align:right">'+fmt(f.saldoIni)+'</td>'+
+      '<td data-l="Abonado" style="text-align:right;color:#1e8449">'+(facAbonado(f)?fmt(facAbonado(f)):'-')+'</td>'+
+      '<td data-l="Debe" style="text-align:right;font-weight:800;color:'+(deb>0?'#c0392b':'#27ae60')+'">'+(deb>0?fmt(deb):'$0')+'</td>'+
+      '<td style="white-space:nowrap">'+(deb>0?'<button class="btn bg" onclick="abrirAbonoCartAnt(\''+c.id+'\',\''+f.id+'\')" style="width:auto;display:inline-block;margin:2px 0;padding:5px 10px;font-size:11px">Abonar</button> ':'')+
+        '<button class="btn bblue" onclick="verAbonosCartAnt(\''+c.id+'\',\''+f.id+'\')" style="width:auto;display:inline-block;margin:2px 0;padding:5px 9px;font-size:11px">Pagos ('+(f.abonos||[]).length+')</button>'+
+        (wa&&deb>0?' <button class="btn" onclick="waCartAnt(\''+c.id+'\',\''+f.id+'\')" style="width:auto;display:inline-block;margin:2px 0;padding:5px 9px;font-size:11px;background:#25d366;color:#fff">WA</button>':'')+'</td></tr>';
+  }).join('');
+}
+function setCantVista(v){cantVista=v;renderCartAnt();}
+function buscarFacCartAnt(cid,fid){var c=clientes.find(function(x){return x.id===cid;});var f=c&&(c.facturas||[]).find(function(x){return x.id===fid;});return f?{c:c,f:f}:null;}
+function abrirAbonoCartAnt(cid,fid){
+  var x=buscarFacCartAnt(cid,fid);if(!x)return;
+  cantSel={cid:cid,fid:fid};
+  g('cab-tit').textContent='Abono FAC:'+x.f.fac;
+  g('cab-cli').textContent=nombreCliente(x.c)+(x.c.cedula?' — CC '+x.c.cedula:'');
+  g('cab-info').innerHTML='<div><span>Saldo inicial</span><b>'+fmt(x.f.saldoIni)+'</b></div><div><span>Abonado</span><b style="color:#1e8449">'+fmt(facAbonado(x.f))+'</b></div><div><span>Debe</span><b style="color:#c0392b">'+fmt(facSaldo(x.f))+'</b></div><div><span>Mora</span><b>'+moraActual(x.f)+' dias</b></div>';
+  sv('cab-monto','');sv('cab-rc','');sv('cab-fecha',fechaHoyISO());
+  cabCalc();
+  g('m-cartant').classList.add('open');
+  setTimeout(function(){var m=g('cab-monto');if(m)m.focus();},100);
+}
+function cabPagarTodo(){var x=cantSel&&buscarFacCartAnt(cantSel.cid,cantSel.fid);if(!x)return;var el=g('cab-monto');el.value=String(facSaldo(x.f));fmtInputPesos(el);cabCalc();}
+function cabCalc(){
+  var x=cantSel&&buscarFacCartAnt(cantSel.cid,cantSel.fid);if(!x)return;
+  var m=leerPesos('cab-monto'),deb=facSaldo(x.f),el=g('cab-prev');if(!el)return;
+  if(!(m>0)){el.textContent='';return;}
+  if(m>deb){el.innerHTML='<span style="color:#c0392b">El abono es mayor a lo que debe ('+fmt(deb)+')</span>';return;}
+  el.innerHTML=(m>=deb?'<b style="color:#1e8449">PAGO TOTAL</b> — la factura queda paga':'Queda debiendo <b style="color:#c0392b">'+fmt(deb-m)+'</b>')+'<div style="color:#888;margin-top:3px">En el libro: '+((m>=deb?'PAGO TOTAL FAC:':'ABONO FAC:')+x.f.fac+' '+nombreCliente(x.c)).toUpperCase()+'</div>';
+}
+function rcYaUsado(rc){
+  var n=fvNorm(rc);if(!n)return null;
+  var r=recaudos.find(function(x){return x.rc&&fvNorm(x.rc)===n;});if(r)return 'Pagos Sistecredito ('+[r.cliente.nombre,r.cliente.apellido].filter(Boolean).join(' ')+')';
+  var hit=null;
+  clientes.some(function(c){return (c.facturas||[]).some(function(f){return (f.abonos||[]).some(function(a){if(a.rc&&fvNorm(a.rc)===n){hit='FAC:'+f.fac+' de '+nombreCliente(c);return true;}return false;});});});
+  return hit;
+}
+function guardarAbonoCartAnt(){
+  if(sinConexionActiva()){toast('Sin conexion a internet. No se puede registrar en este momento.',1);return;}
+  var x=cantSel&&buscarFacCartAnt(cantSel.cid,cantSel.fid);if(!x)return;
+  var monto=leerPesos('cab-monto'),deb=facSaldo(x.f);
+  if(!(monto>0)){toast('Escribe el valor del abono',1);return;}
+  if(monto>deb){toast('El abono no puede ser mayor a lo que debe ('+fmt(deb)+')',1);return;}
+  var rc=(g('cab-rc').value||'').replace(/\D/g,'');
+  if(rc){var us=rcYaUsado(rc);if(us){toast('El RC '+rc+' ya esta registrado en '+us,1);return;}}
+  var fISO=g('cab-fecha').value||fechaHoyISO(),fecha=fmtFechaDDMMYYYY(parseDate(fISO)),medio=g('cab-medio').value;
+  var total=monto>=deb;
+  var ab={id:'ab_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),ts:Date.now(),fecha:fecha,monto:monto,medio:medio,rc:rc,quien:currentUser?(currentUser.nombre||currentUser.uname):''};
+  x.f.abonos=x.f.abonos||[];x.f.abonos.push(ab);
+  var desc=(total?'PAGO TOTAL FAC:':'ABONO FAC:')+x.f.fac+' '+nombreCliente(x.c).toUpperCase()+(medio!=='Efectivo'?' — '+medio.toUpperCase():'');
+  addContableAuto(fecha,desc,monto,0,'auto','Ingreso por ventas');
+  if(cont.length){var mv=cont[cont.length-1];mv.refCartAnt={c:x.c.id,f:x.f.id,a:ab.id};if(rc)mv.rcFis=rc;try{localStorage.setItem(CK,JSON.stringify(cont));}catch(e){}}
+  logActividad('Cartera',(total?'Pago total ':'Abono ')+'FAC:'+x.f.fac+' de '+nombreCliente(x.c)+': '+fmt(monto));
+  save();cm('m-cartant');renderAll();
+  toast((total?'Pago total registrado. FAC:'+x.f.fac+' quedo paga':'Abono de '+fmt(monto)+' registrado'));
+}
+// Si el abono se borra desde el Libro Contable, se quita tambien de la factura
+function cartAntQuitarDesdeContable(mov){
+  var x=buscarFacCartAnt(mov.refCartAnt.c,mov.refCartAnt.f);if(!x)return '';
+  var antes=(x.f.abonos||[]).length;
+  x.f.abonos=(x.f.abonos||[]).filter(function(a){return a.id!==mov.refCartAnt.a;});
+  return antes!==x.f.abonos.length?' Se quito tambien el abono de la FAC:'+x.f.fac+' (vuelve a deber '+fmt(facSaldo(x.f))+').':'';
+}
+function verAbonosCartAnt(cid,fid){
+  var x=buscarFacCartAnt(cid,fid);if(!x)return;
+  var ab=(x.f.abonos||[]);
+  var txt='FAC:'+x.f.fac+' — '+nombreCliente(x.c)+'\nSaldo inicial: '+fmt(x.f.saldoIni)+'\n\n'+(ab.length?ab.map(function(a,i){return (i+1)+'. '+a.fecha+'  '+fmt(a.monto)+(a.rc?'  RC'+a.rc:'')+'  ('+(a.medio||'Efectivo')+')';}).join('\n'):'Aun no tiene abonos')+'\n\nDebe: '+fmt(facSaldo(x.f));
+  alert(txt);
+}
+function waCartAnt(cid,fid){
+  var x=buscarFacCartAnt(cid,fid);if(!x)return;var t=telWhatsApp(x.c.tel);if(!t)return;
+  var msg='Hola '+(x.c.nombre||'')+', le saludamos de '+empNombre()+'. Le recordamos que tiene un saldo pendiente de '+fmt(facSaldo(x.f))+' de la factura '+x.f.fac+'. Puede acercarse a realizar su pago. ¡Gracias!';
+  window.open('https://wa.me/'+t+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+// ── IMPORTAR CLIENTES DESDE EXCEL (reporte "Cuentas por cobrar por edades") ──
+function importarClientesExcel(input){
+  var f=input.files&&input.files[0];input.value='';
+  if(!f)return;
+  if(!isAdmin()){toast('Solo un administrador puede importar clientes',1);return;}
+  if(typeof XLSX==='undefined'){toast('El lector de Excel aun esta cargando. Revisa la conexion e intenta de nuevo.',1);return;}
+  var r=new FileReader();
+  r.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      var filas=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:true});
+      procesarImportClientes(filas);
+    }catch(err){console.error(err);toast('No se pudo leer el archivo: '+err.message,1);}
+  };
+  r.readAsArrayBuffer(f);
+}
+function limpiarDirImport(d){
+  d=String(d||'').replace(/\s+/g,' ').trim();
+  var i=d.search(/\bSin Zona\b/i);
+  if(i>=0)d=d.slice(0,i).trim();
+  d=d.replace(/\bTel:.*$/i,'').trim();
+  var w=d.split(' ').filter(Boolean),n=w.length;
+  for(var k=Math.floor(n/2);k>=1;k--){
+    if(w.slice(n-2*k,n-k).join(' ').toUpperCase()===w.slice(n-k).join(' ').toUpperCase()){w=w.slice(0,n-2*k);break;}
+  }
+  return w.join(' ').toUpperCase();
+}
+function telValidoImport(){
+  for(var i=0;i<arguments.length;i++){
+    var t=String(arguments[i]==null?'':arguments[i]).replace(/\D/g,'');
+    if(t.length===12&&t.indexOf('57')===0)t=t.slice(2);
+    if(t.length===10&&t.charAt(0)==='3')return t;
+  }
+  return '';
+}
+function fechaImport(v){
+  if(v instanceof Date)return fmtFechaDDMMYYYY(v);
+  if(typeof v==='number'&&v>20000){var d=new Date(Math.round((v-25569)*86400000));return fmtFechaDDMMYYYY(new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
+  var s=String(v||'').trim();
+  var M={ENE:1,FEB:2,MAR:3,ABR:4,MAY:5,JUN:6,JUL:7,AGO:8,SEP:9,SET:9,OCT:10,NOV:11,DIC:12};
+  var m=s.match(/^([A-Za-z]{3})\s*(\d{1,2})\s*\/\s*(\d{2,4})$/);
+  if(m&&M[m[1].toUpperCase()]){var a=+m[3];if(a<100)a+=2000;return ('0'+m[2]).slice(-2)+'/'+('0'+M[m[1].toUpperCase()]).slice(-2)+'/'+a;}
+  return s;
+}
+function partirNombreImport(full){
+  var w=String(full||'').replace(/\s+/g,' ').trim().toUpperCase().split(' ').filter(Boolean);
+  if(w.length<=1)return {nombre:w[0]||'',apellido:''};
+  if(w.length===2)return {apellido:w[0],nombre:w[1]};
+  if(w.length===3){
+    // Si la palabra del medio es un nombre comun (ej: MEJIA NANCY MAIDOLY) es 1 apellido + 2 nombres
+    var NOMS=' MARIA ANA LUZ NANCY SANDRA IVAN JUAN JOSE LUIS CARLOS JORGE DIANA PAOLA LAURA CLAUDIA MARTHA GLORIA ROSA ANDRES DIEGO OSCAR EDGAR JHON JOHN JAIRO LEIDY YENNY JENNY ANGIE KAREN LINA DORIS CARMEN BLANCA MONICA ADRIANA ALBA OLGA SONIA PEDRO PABLO MIGUEL ANGEL CAMILO FELIPE DAVID DANIEL DANIELA ANDREA ERIKA YURI YULI ';
+    if(NOMS.indexOf(' '+w[1]+' ')>=0)return {apellido:w[0],nombre:w[1]+' '+w[2]};
+    return {apellido:w[0]+' '+w[1],nombre:w[2]};
+  }
+  return {apellido:w[0]+' '+w[1],nombre:w.slice(2).join(' ')};
+}
+function procesarImportClientes(filas){
+  var hi=filas.findIndex(function(f){var t=f.map(function(c){return String(c).trim().toUpperCase();});return t.indexOf('NOMBRE')>=0&&(t.indexOf('NIT')>=0||t.some(function(x){return /^C(E|É)DULA/.test(x);}));});
+  if(hi<0){toast('No encontre las columnas NIT/CEDULA y NOMBRE en el Excel',1);return;}
+  var H=filas[hi].map(function(c){return String(c).trim().toUpperCase();});
+  function col(re){return H.findIndex(function(h){return re.test(h);});}
+  var cCed=col(/^(NIT|C(E|É)DULA|CC)$/),cNom=col(/^NOMBRE$/),cTel=col(/^TEL/),cCel=col(/^CEL/),cDir=col(/^(DIR|DIRECCION|DIRECCIÓN|BARRIO)/),
+      cFec=col(/^FECHA/),cSal=col(/^SALDO/),cMora=col(/^MORA/),cFac=col(/^(NUM|FACTURA|FAC)/);
+  var modo='propia',datos={},orden=[],telesMalos=0;
+  for(var i=hi+1;i<filas.length;i++){
+    var f=filas[i];var c0=String(f[0]||'').trim(),nom=String(f[cNom]||'').trim();
+    var linea=f.map(function(x){return String(x);}).join(' ').toUpperCase();
+    if(/SISTE/.test(linea)&&!/^\d{4,}\s*$/.test(c0)&&(/SISTE/.test(c0.toUpperCase())||/^SISTECREDITO/.test(nom.toUpperCase()))){modo='siste';continue;}
+    if(/^\d{6,}\s+SEDE/i.test(c0)){modo='propia';continue;}
+    if(/TOTAL/i.test(c0))continue;
+    var ced=cedLimpia(String(c0).replace(/\D/g,''));
+    if(!nom||!ced)continue;
+    var key=ced;
+    var dirRaw=cDir>=0?f[cDir]:'';
+    var tMatch=String(dirRaw).match(/Tel:\s*([\d ]+)/i);
+    var tel=telValidoImport(cTel>=0?f[cTel]:'',cCel>=0?f[cCel]:'',tMatch?tMatch[1].split(' ')[0]:'');
+    var hayTel=[cTel>=0?f[cTel]:'',cCel>=0?f[cCel]:'',tMatch?tMatch[1]:''].some(function(x){return String(x||'').replace(/\D/g,'').length>0;});
+    if(!datos[key]){
+      var pn=partirNombreImport(nom);
+      datos[key]={cedula:ced,nombre:pn.nombre,apellido:pn.apellido,tel:tel,barrio:limpiarDirImport(dirRaw),siste:false,facturas:[],telMalo:!tel&&hayTel};
+      orden.push(key);
+    }
+    var d=datos[key];
+    if(!d.tel&&tel){d.tel=tel;d.telMalo=false;}
+    if(!d.barrio)d.barrio=limpiarDirImport(dirRaw);
+    if(modo==='siste'){d.siste=true;continue;}
+    var saldo=Math.round(+String(f[cSal]==null?'':f[cSal]).replace(/[^\d.-]/g,'')||0);
+    var facTxt=String(cFac>=0?f[cFac]:'').trim();
+    var facNum=(facTxt.match(/\d+/)||[''])[0];
+    if(saldo>0)d.facturas.push({fac:facNum||'S/N',facOrig:facTxt.replace(/\s+/g,' '),saldoIni:saldo,fecha:fechaImport(cFec>=0?f[cFec]:''),mora:+(cMora>=0?f[cMora]:0)||0});
+  }
+  if(!orden.length){toast('No encontre clientes en el Excel',1);return;}
+  var hoy=fmtFechaDDMMYYYY(),nuevos=0,actual=0,nFac=0,totFac=0,nSiste=0,facRep=0;
+  orden.forEach(function(k){var d=datos[k];if(d.telMalo)telesMalos++;if(d.siste)nSiste++;nFac+=d.facturas.length;totFac+=d.facturas.reduce(function(s,x){return s+x.saldoIni;},0);
+    var ex=clientes.find(function(c){return cedLimpia(c.cedula)===d.cedula;});if(ex)actual++;else nuevos++;});
+  if(!confirm('Se encontraron '+orden.length+' clientes en el Excel:\n\n'+
+    '• '+nuevos+' clientes nuevos se van a crear\n'+
+    '• '+actual+' ya existen (solo se completan los datos que les falten)\n'+
+    '• '+nSiste+' son de Sistecredito (solo se crea el cliente, sin cartera)\n'+
+    '• '+nFac+' facturas de cartera por '+fmt(totFac)+' quedan en Cartera > Credicontado > Cartera anterior\n'+
+    (telesMalos?'• '+telesMalos+' telefonos no son celulares validos (10 digitos) y se dejan vacios\n':'')+
+    '\nContinuar?'))return;
+  var ts=Date.now();
+  orden.forEach(function(k,ix){
+    var d=datos[k];
+    var c=clientes.find(function(x){return cedLimpia(x.cedula)===d.cedula;});
+    if(!c){
+      c={id:'cli_'+(ts+ix)+'_'+Math.random().toString(36).slice(2,8),nombre:d.nombre,apellido:d.apellido,cedula:d.cedula,tel:d.tel,barrio:d.barrio,fechaRegistro:hoy,origen:'Importado'};
+      clientes.push(c);
+    }else{
+      if(!c.tel&&d.tel)c.tel=d.tel;
+      if(!c.barrio&&d.barrio)c.barrio=d.barrio;
+    }
+    if(d.siste)c.siste=true;
+    c.facturas=c.facturas||[];
+    d.facturas.forEach(function(nf,j){
+      var ya=c.facturas.find(function(x){return nf.fac!=='S/N'?x.fac===nf.fac:(x.fac==='S/N'&&x.saldoIni===nf.saldoIni&&x.fecha===nf.fecha);});
+      if(ya){facRep++;return;}
+      c.facturas.push({id:'fa_'+(ts+ix)+'_'+j+'_'+Math.random().toString(36).slice(2,5),fac:nf.fac,facOrig:nf.facOrig,saldoIni:nf.saldoIni,fecha:nf.fecha,mora:nf.mora,corte:hoy,abonos:[]});
+    });
+  });
+  logActividad('Clientes','Importo '+orden.length+' clientes desde Excel ('+nuevos+' nuevos, '+nFac+' facturas de cartera)');
+  save();renderAll();
+  toast('Listo: '+nuevos+' clientes creados, '+actual+' actualizados'+(facRep?' ('+facRep+' facturas ya estaban)':''));
+}
+
 function importarInventarioExcel(input){
   var f=input.files&&input.files[0];input.value='';
   if(!f)return;
@@ -9893,7 +10228,7 @@ function renderAll(){
   if(!currentUser)return;
   applyRol();
   renderInv();renderSel();renderHist();renderCart();renderRes();renderSV();renderCreditos();renderCartFinanciera();
-  renderUsuarios();renderContable();renderEntradas();renderClientes();renderPedidos();renderCarteraGlobal();renderRecaudos();renderTraslados();aplicarMarca();
+  renderUsuarios();renderContable();renderEntradas();renderClientes();renderPedidos();renderCarteraGlobal();renderRecaudos();renderCartAnt();renderTraslados();aplicarMarca();
   revisarAvisoPass();
   renderPromosVenta();
   if(isAdmin())renderMetas();
