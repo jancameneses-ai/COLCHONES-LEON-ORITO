@@ -401,6 +401,27 @@ label{color:#4a6a83}
 .fv-box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:2px solid #2e8fd6;border-left:6px solid #27ae60;border-radius:12px;padding:12px 16px;margin-bottom:12px;box-shadow:0 3px 12px rgba(46,143,214,.1)}
 .fv-box label{margin:0!important;font-size:20px!important;font-weight:800!important;color:#1b6ca8!important;letter-spacing:.5px}
 .fv-box input{width:140px!important;font-size:22px!important;font-weight:800;letter-spacing:4px;text-align:center;padding:8px 10px;border:2px solid #cfe6f5;color:#1b6ca8}
+.libro-wrap{overflow-x:auto;border:1px solid #9fb6cc;border-radius:6px}
+table.libro{border-collapse:collapse;width:100%;font-size:12px;font-family:Calibri,'Poppins',Arial,sans-serif}
+table.libro th,table.libro td{border:1px solid #c3d1de;padding:3px 8px;white-space:nowrap}
+table.libro thead th{background:#fff;color:#222;font-style:italic;font-weight:700;text-align:center;font-size:11px;position:static;text-transform:uppercase}
+table.libro th.libro-mes{background:#9dc3e6;font-style:normal;font-size:14px;font-family:'Times New Roman',serif;letter-spacing:.5px}
+.libro-nav{cursor:pointer;padding:0 10px;color:#1b6ca8;font-size:12px;user-select:none}
+table.libro th.lb-ing{background:#a9d08e}table.libro th.lb-egr{background:#f4b084}table.libro th.lb-sal{background:#ffd966}
+table.libro td.lb-ing{background:#e2efda;text-align:right}table.libro td.lb-egr{background:#fce4d6;text-align:right}
+table.libro td.lb-sal{background:#fff2cc;text-align:right;min-width:120px}
+.lb-dol{float:left;color:#333}
+table.libro td.lb-fec{text-align:center;color:#333}
+table.libro td.lb-det{white-space:normal;min-width:260px;color:#111;text-transform:uppercase}
+table.libro td.lb-doc{color:#1b6ca8;font-weight:600}
+table.libro tr.lb-row:hover td{filter:brightness(.96)}
+table.libro tr.lb-inc.lb-abono td.lb-det,table.libro tr.lb-inc.lb-abono td.lb-doc{background:#ffff9e}table.libro tr.lb-inc.lb-envio td.lb-det,table.libro tr.lb-inc.lb-envio td.lb-doc{background:#d6e0f5}table.libro tr.lb-inc.lb-gasto td.lb-det,table.libro tr.lb-inc.lb-gasto td.lb-doc{background:#f6cccc}
+table.libro td.lb-falta .doc-sis-in{border-color:#e67e22!important;background:#fff!important}table.libro td.lb-falta .doc-sis-in::placeholder{color:#e67e22;font-weight:700}
+table.libro tr.lb-prev td,table.libro tr.lb-tot td{font-weight:700}
+table.libro td.lb-acc,table.libro th.lb-acc{border:none;background:transparent!important;padding:2px 4px}
+.lb-ico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;cursor:pointer;font-size:11px;background:#fef5e7;color:#d68910;margin-right:3px}
+.lb-ico.lb-x{background:#fdedec;color:#c0392b;font-weight:700}
+table.libro .doc-sis-in{width:90px;height:22px;padding:1px 5px!important;font-size:11px!important;border:1px dashed #c3d1de!important;background:transparent;border-radius:3px}
 .doc-sis-in{width:110px;padding:4px 6px!important;font-size:11px!important;font-weight:600;color:#555;text-transform:uppercase;margin:0!important}
 @media(max-width:900px){.cont-form-grid{grid-template-columns:1fr 1fr!important}}
 .ds-box{padding:8px 14px}.ds-box label{font-size:17px!important}.ds-box input{width:120px!important;font-size:18px!important;padding:6px 8px}
@@ -1500,8 +1521,8 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
     </div>
     <div style="display:flex;gap:0;align-items:stretch;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:4px;background:#fff;padding:6px 10px;border-radius:8px 0 0 8px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-right:1px solid #eee">
-        <select id="cont-exp-mes" style="border:none;background:transparent;font-size:11px;font-weight:600;color:#1b6ca8;outline:none;cursor:pointer;padding:2px"></select>
-        <select id="cont-exp-anio" style="border:none;background:transparent;font-size:11px;font-weight:600;color:#1b6ca8;outline:none;cursor:pointer;padding:2px"></select>
+        <select id="cont-exp-mes" onchange="renderContable()" style="border:none;background:transparent;font-size:11px;font-weight:600;color:#1b6ca8;outline:none;cursor:pointer;padding:2px"></select>
+        <select id="cont-exp-anio" onchange="renderContable()" style="border:none;background:transparent;font-size:11px;font-weight:600;color:#1b6ca8;outline:none;cursor:pointer;padding:2px"></select>
       </div>
       <button class="btn bgreen" onclick="exportarExcelContable()" style="font-size:11px;padding:6px 14px;border-radius:0 8px 8px 0;margin:0">Exportar Excel</button>
     </div>
@@ -1561,25 +1582,18 @@ mark.mk{background:#d4f3e1;color:inherit;padding:0 1px;border-radius:3px}
     </div>
   </div>
   <div class="card">
-    <h2>Gastos por categoria (mes actual)</h2>
-    <div id="cont-cat-resumen" style="overflow-x:auto"></div>
-  </div>
-  <div class="card">
     <h2>Movimientos</h2>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
       <input type="text" id="cont-buscar" placeholder="Buscar por fecha, detalle, FV, RC, DS o doc. sistema..." oninput="renderContable()" style="margin-bottom:0;flex:1;text-transform:none">
       <button id="cont-undo" onclick="contDeshacer()" title="Deshacer" style="min-width:38px;height:38px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:16px;cursor:pointer;opacity:0.35;transition:opacity .2s">↩</button>
       <button id="cont-redo" onclick="contRehacer()" title="Rehacer" style="min-width:38px;height:38px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:16px;cursor:pointer;opacity:0.35;transition:opacity .2s">↪</button>
     </div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr>
-        <th>Fecha</th><th>Detalle</th><th>Categoria</th><th>Doc fisico</th><th>Doc sistema</th>
-        <th style="text-align:right;background:#f0fff4;color:#1e8449">Ingreso</th>
-        <th style="text-align:right;background:#fff5f5;color:#c0392b">Egreso</th>
-        <th style="text-align:right;background:#eaf4ff;color:#1a5276">Total acumulado</th>
-        <th>Registrado por</th>
-        <th></th>
-      </tr></thead>
+    <div id="cont-inc-aviso" style="display:none;font-size:12px;color:#b9770e;background:#fef9e7;border:1px solid #f9e79f;border-radius:8px;padding:8px 12px;margin-bottom:10px"></div>
+    <div class="libro-wrap"><table class="libro">
+      <thead>
+        <tr><th colspan="8" class="libro-mes"><span class="libro-nav" onclick="contMoverMes(-1)" title="Mes anterior">&#9664;</span> <span id="cont-mes-tit">MES</span> <span class="libro-nav" onclick="contMoverMes(1)" title="Mes siguiente">&#9654;</span></th></tr>
+        <tr><th>FECHA</th><th>DETALLE</th><th>DOC FISICO</th><th>DOC SISTEMA</th><th class="lb-ing">INGRESOS</th><th class="lb-egr">EGRESOS</th><th class="lb-sal">SALDO</th><th class="lb-acc"></th></tr>
+      </thead>
       <tbody id="cont-tb"></tbody>
     </table></div>
     <div id="cont-pag"></div>
@@ -7100,7 +7114,7 @@ function renderRes(){
   }
 }
 
-var contPage=1; var CONT_PER_PAGE=15;
+var contPage=0; var CONT_PER_PAGE=15; var contUltBusq=''; // contPage=0 -> ultima pagina (lo mas reciente)
 var contHistorial=[]; // para undo/redo
 var contHistIdx=-1;   // posicion actual en el historial
 
@@ -7375,7 +7389,7 @@ function addContable(){
   if(g('cont-docsis'))g('cont-docsis').value='';
   g('cont-ing').value='';g('cont-egr').value='';
   toggleContCat();
-  renderContable();
+  contPage=0;renderContable();
   toast('Movimiento registrado');
 }
 
@@ -7417,18 +7431,31 @@ function lxEsUltimoAbono(m,v){
   var ult=null;cont.forEach(function(c){if(c.refVentaId===v.id&&/^Abono Credicontado/.test(c.desc||'')&&(!ult||(c.ts||0)>=(ult.ts||0)))ult=c;});
   return ult===m;
 }
-function lxDocFisico(m){
+// Documento fisico que la app ya conoce sola (DS del gasto, RC del pago, FV de la venta)
+function lxDocFisicoAuto(m){
   if(m.ds)return 'DS'+m.ds;
   var r=m.refRecaudoId?recaudos.find(function(x){return x.id===m.refRecaudoId;}):null;
   if(r&&r.rc)return 'RC'+r.rc;
   if(m.rcFis)return 'RC'+m.rcFis;
+  if(lxTipo(m)==='abono')return ''; // en los abonos el doc fisico es el RC (el FAC ya va en el detalle)
   var v=m.refVentaId?ven.find(function(x){return x.id===m.refVentaId;}):null;
   if(v&&(v.fv||v.numFac))return 'FV:'+(v.fv||v.numFac);
   return '';
 }
+function lxDocFisico(m){return lxDocFisicoAuto(m)||(m.docFis||'');}
+// Que documentos son obligatorios: ventas ninguno; gastos y abonos fisico+sistema; traslados solo sistema
+function lxRequisitos(m){
+  var t=lxTipo(m);
+  if(t==='envio')return {fis:false,sis:true};
+  if(t==='abono'||t==='gasto')return {fis:true,sis:true};
+  return {fis:false,sis:false};
+}
+function lxFaltaFis(m){return lxRequisitos(m).fis&&!lxDocFisico(m);}
+function lxFaltaSis(m){return lxRequisitos(m).sis&&!(m.docSis||'').trim();}
+function lxIncompleto(m){return lxFaltaFis(m)||lxFaltaSis(m);}
 function lxTipo(m){
   if(m.categoria==='Traslado de caja')return 'envio';
-  if(m.refRecaudoId||m.refCartAnt||/^(Abono|Cuota inicial|Pago total)/i.test(m.desc||''))return 'abono';
+  if(m.refRecaudoId||m.refCartAnt||/^(Abono|Pago total)/i.test(m.desc||''))return 'abono';
   if((m.egr||0)>0)return 'gasto';
   return '';
 }
@@ -7485,7 +7512,7 @@ function generarLibroAuxiliar(){
       if(c.ing>0)r.getCell(7).value=c.ing;
       if(c.egr>0)r.getCell(8).value=c.egr;
       r.getCell(9).value={formula:'I'+(fila-1)+'+G'+fila+'-H'+fila,result:saldo};
-      estiloFila(r,lxTipo(c));
+      estiloFila(r,lxIncompleto(c)?lxTipo(c):'');
       for(var col=3;col<=9;col++)r.getCell(col).font={size:11,name:'Calibri'};
       fila++;
     });
@@ -7951,7 +7978,8 @@ function renderContable(){
   var tb=g('cont-tb');if(!tb)return;
   contActualizarBotones();
   var q=((g('cont-buscar')||{value:''}).value||'').toLowerCase().trim();
-  if(q)contPage=1;
+  if(q!==contUltBusq)contPage=0;
+  contUltBusq=q;
 
   // Poblar selectores de mes/anio para exportar (una sola vez), igual que en Resumen
   var MESES_CE=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -8001,15 +8029,18 @@ function renderContable(){
   // Filter
   // Map original indices BEFORE sorting so indexOf works correctly
   var withIdx=cont.map(function(m,i){return{m:Object.assign({},m,{fecha:normFechaGlobal(m.fecha)||m.fecha}),i:i};});
-  // Sort by date desc
+  // Orden como el libro: de arriba (mas viejo) hacia abajo (mas nuevo)
   withIdx.sort(function(a,b){
     var da=fechaToMs(a.m.fecha);var db=fechaToMs(b.m.fecha);
-    if(da!==db)return db-da;
-    return (b.m.ts||0)-(a.m.ts||0);
+    if(da!==db)return da-db;
+    return (a.m.ts||0)-(b.m.ts||0);
   });
+  // Saldo acumulado renglon por renglon (sobre todo el libro, como la columna SALDO)
+  var _acumAsc=0;
+  withIdx.forEach(function(x){_acumAsc+=(x.m.ing||0)-(x.m.egr||0);x.acum=_acumAsc;});
   var filtered=withIdx.filter(function(x){
     if(!q)return true;
-    var _t=(lxDetalle(x.m)+' '+lxDocFisico(x.m)+' '+(x.m.docSis||'')).toLowerCase();if(_t.indexOf(q)>=0||_t.replace(/[:\-]/g,'').indexOf(q.replace(/[:\-]/g,''))>=0)return true;
+    var _t=(lxDetalle(x.m)+' '+lxDocFisico(x.m)+' '+(x.m.docSis||'')+(lxIncompleto(x.m)?' incompleto falta':'')).toLowerCase();if(_t.indexOf(q)>=0||_t.replace(/[:\-]/g,'').indexOf(q.replace(/[:\-]/g,''))>=0)return true;
     return x.m.desc.toLowerCase().indexOf(q)>=0||x.m.fecha.indexOf(q)>=0||(x.m.categoria||'').toLowerCase().indexOf(q)>=0||(x.m.ds&&(('ds-'+x.m.ds).indexOf(q)>=0||String(x.m.ds).indexOf(q)>=0));
   });
 
@@ -8019,15 +8050,7 @@ function renderContable(){
     totalIng+=x.m.ing||0;
     totalEgr+=x.m.egr||0;
   });
-  // Running total goes DOWN from the final balance (newest first)
-  var saldoFinal=totalIng-totalEgr;
-  var acumRun=saldoFinal;
-  var withTotal=filtered.map(function(x){
-    var acumEsta=acumRun;
-    acumRun-=(x.m.ing||0);
-    acumRun+=(x.m.egr||0);
-    return{m:x.m,i:x.i,acum:acumEsta};
-  });
+  var withTotal=filtered.map(function(x){return{m:x.m,i:x.i,acum:x.acum};});
 
   // Totales del MES ACTUAL (solo para las tarjetas de Ingresos/Egresos, el saldo sigue siendo historico completo)
   var hoyCont=new Date();
@@ -8050,50 +8073,66 @@ function renderContable(){
   }
   renderContableCategorias();
 
-  // Pagination
-  var total=withTotal.length;
-  var pages=Math.max(1,Math.ceil(total/CONT_PER_PAGE));
-  if(contPage>pages)contPage=1;
-  var start=(contPage-1)*CONT_PER_PAGE;
-  var paginada=withTotal.slice(start,start+CONT_PER_PAGE);
-  var cpw=g('cont-pag');
-  if(cpw)cpw.innerHTML=pagWidget('cont',contPage,total,CONT_PER_PAGE,'setContPage');
-
-  if(!paginada.length){
-    tb.innerHTML='<tr><td colspan="10" class="empty">'+(q?'Sin resultados':'Sin movimientos registrados')+'</td></tr>';
-    return;
-  }
-
-  tb.innerHTML=paginada.map(function(x){
-    var m=x.m;var idx=x.i;var acum=x.acum;
-    var autoLabel=m.tipo==='auto'?'<span style="font-size:9px;background:#ebf5fb;color:#1a5276;padding:1px 5px;border-radius:3px;margin-left:4px">auto</span>':'';
-    var quienLabel=m.quien||'Sistema';
-    var horaLabel=m.hora||'';
-    return '<tr>'+
-      '<td style="font-size:11px;color:#888">'+m.fecha+'</td>'+
-      '<td style="font-weight:500" title="'+escAttrCont(m.desc)+'">'+lxDetalle(m)+autoLabel+'</td>'+
-      '<td style="font-size:11px;color:'+(m.categoria?'#555':'#ccc')+'">'+(m.categoria||'-')+'</td>'+
-      '<td style="font-weight:700;color:#1b6ca8;white-space:nowrap;font-size:12px">'+(lxDocFisico(m)||'<span style="color:#ccc">-</span>')+'</td>'+
-      '<td>'+(getPerm('contable-edit')?'<input type="text" class="noup doc-sis-in" value="'+escAttrCont(m.docSis||'')+'" placeholder="-" onchange="contSetDocSis('+idx+',this)" onkeydown="if(event.key===\'Enter\')this.blur()">':(m.docSis||'-'))+'</td>'+
-      '<td style="text-align:right;background:#f0fff4;font-weight:600;color:#1e8449">'+(m.ing>0?fmt(m.ing):'—')+'</td>'+
-      '<td style="text-align:right;background:#fff5f5;font-weight:600;color:#c0392b">'+(m.egr>0?fmt(m.egr):'—')+'</td>'+
-      '<td style="text-align:right;background:#eaf4ff;font-weight:700;color:'+(acum>=0?'#1a5276':'#e74c3c')+'">'+fmt(acum)+'</td>'+
-      '<td style="font-size:10px;color:#888;white-space:nowrap">'+
-        '<div>'+quienLabel+'</div>'+
-        (horaLabel?'<div style="color:#bbb">'+horaLabel+'</div>':'')+
-      '</td>'+
-      '<td style="white-space:nowrap">'+
-        (getPerm('contable-edit')?(
-        '<button class="btn bgold" onclick="editContable('+idx+')" style="font-size:10px;padding:3px 8px;margin-right:3px">Editar</button>'+
-        '<button class="btn bred" onclick="delContable('+idx+')" style="font-size:10px;padding:3px 8px">X</button>'
-        ):'<span style="color:#ccc;font-size:10px">Solo lectura</span>')+
-      '</td>'+
+  // ── VISTA LIBRO: el mes elegido, de arriba hacia abajo, como el Excel ──
+  var MESL=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  var mesV=selMesE?+selMesE.value:hoyCE.getMonth(),anioV=selAnioE?+selAnioE.value:hoyCE.getFullYear();
+  var titEl=g('cont-mes-tit');if(titEl)titEl.textContent=mesV<0?'TODOS LOS MESES':MESL[mesV]+' '+anioV;
+  var iniMs=mesV<0?-Infinity:new Date(anioV,mesV,1).getTime(),finMs=mesV<0?Infinity:new Date(anioV,mesV+1,1).getTime();
+  var saldoPrevL=0;
+  withIdx.forEach(function(x){if(fechaToMs(x.m.fecha)<iniMs)saldoPrevL=x.acum;});
+  var filasMes=withTotal.filter(function(x){var ms=fechaToMs(x.m.fecha);return ms>=iniMs&&ms<finMs;});
+  var cpw=g('cont-pag');if(cpw)cpw.innerHTML='';
+  var puedeEd=getPerm('contable-edit');
+  function pesos(v){return v?fmt(v):'';}
+  function saldoCell(v){return '<td class="lb-sal"><span class="lb-dol">$</span><span style="color:'+(v<0?'#c0392b':'#1a1a1a')+'">'+fmt(v).replace('$','').replace('-','-')+'</span></td>';}
+  var html='';
+  var tIng=0,tEgr=0,nInc=0;
+  // Lo mas reciente arriba (de abajo hacia arriba); el saldo de cada renglon sigue siendo el del libro
+  filasMes.slice().reverse().forEach(function(x){
+    var m=x.m,idx=x.i;tIng+=m.ing||0;tEgr+=m.egr||0;
+    var tipo=lxTipo(m),inc=lxIncompleto(m),fFis=lxFaltaFis(m),fSis=lxFaltaSis(m),fisAuto=lxDocFisicoAuto(m);
+    if(inc)nInc++;
+    html+='<tr class="lb-row'+(inc&&tipo?' lb-inc lb-'+tipo:'')+'" title="'+(inc?'Falta: '+[fFis?'doc. fisico':'',fSis?'doc. sistema':''].filter(Boolean).join(' y '):'')+'">'+
+      '<td class="lb-fec">'+fechaLibro(m.fecha)+'</td>'+
+      '<td class="lb-det" title="'+escAttrCont((m.categoria?'['+m.categoria+'] ':'')+m.desc+' — '+(m.quien||'Sistema')+(m.hora?' '+m.hora:''))+'">'+lxDetalle(m)+'</td>'+
+      '<td class="lb-doc'+(fFis?' lb-falta':'')+'">'+(fisAuto?fisAuto:(puedeEd?'<input type="text" class="noup doc-sis-in" value="'+escAttrCont(m.docFis||'')+'" placeholder="'+(lxRequisitos(m).fis?'Falta':'')+'" onchange="contSetDocFis('+idx+',this)" onkeydown="if(event.key===\'Enter\')this.blur()">':(m.docFis||'')))+'</td>'+
+      '<td class="lb-doc'+(fSis?' lb-falta':'')+'">'+(puedeEd?'<input type="text" class="noup doc-sis-in" value="'+escAttrCont(m.docSis||'')+'" placeholder="'+(lxRequisitos(m).sis?'Falta':'')+'" onchange="contSetDocSis('+idx+',this)" onkeydown="if(event.key===\'Enter\')this.blur()">':(m.docSis||''))+'</td>'+
+      '<td class="lb-ing">'+pesos(m.ing)+'</td>'+
+      '<td class="lb-egr">'+pesos(m.egr)+'</td>'+
+      saldoCell(x.acum)+
+      '<td class="lb-acc">'+(puedeEd?'<span class="lb-ico" onclick="editContable('+idx+')" title="Editar">&#9998;</span><span class="lb-ico lb-x" onclick="delContable('+idx+')" title="Eliminar">&#10005;</span>':'')+'</td>'+
     '</tr>';
-  }).join('');
+  });
+  if(!filasMes.length)html+='<tr><td colspan="8" class="empty">'+(q?'Sin resultados en este mes':'Sin movimientos en este mes')+'</td></tr>';
+  else html='<tr class="lb-tot"><td></td><td>TOTALES DEL MES</td><td></td><td></td><td class="lb-ing">'+fmt(tIng)+'</td><td class="lb-egr">'+fmt(tEgr)+'</td>'+saldoCell(filasMes[filasMes.length-1].acum)+'<td class="lb-acc"></td></tr>'+html;
+  if(mesV>=0&&!q){
+    html+='<tr class="lb-prev"><td></td><td><b>SALDO QUE VIENE MES PASADO</b></td><td></td><td></td><td class="lb-ing">'+pesos(saldoPrevL)+'</td><td class="lb-egr"></td>'+saldoCell(saldoPrevL)+'<td class="lb-acc"></td></tr>';
+  }
+  tb.innerHTML=html;
+  var av=g('cont-inc-aviso');
+  if(av){av.style.display=nInc?'block':'none';av.innerHTML=nInc?'&#9888; <b>'+nInc+'</b> movimiento'+(nInc>1?'s':'')+' de este mes '+(nInc>1?'estan incompletos':'esta incompleto')+' (con color): falta escribir el documento fisico o el del sistema.':'';}
 }
-
+function fechaLibro(f){var p=(normFechaGlobal(f)||f||'').split('/');return p.length===3?(+p[1])+'/'+(+p[0])+'/'+p[2]:(f||'');}
+function contMoverMes(d){
+  var sm=g('cont-exp-mes'),sa=g('cont-exp-anio');if(!sm||!sa)return;
+  var m=+sm.value,a=+sa.value;if(m<0){m=new Date().getMonth();}
+  m+=d;if(m<0){m=11;a--;}if(m>11){m=0;a++;}
+  if(![].some.call(sa.options,function(o){return +o.value===a;})){var o=document.createElement('option');o.value=a;o.textContent=a;sa.appendChild(o);}
+  sm.value=m;sa.value=a;renderContable();
+}
 function setContPage(p){contPage=p;renderContable();}
 function escAttrCont(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function contSetDocFis(idx,el){
+  if(!getPerm('contable-edit')){toast('No tienes permiso para modificar el libro contable',1);return;}
+  if(sinConexionActiva()){toast('Sin conexion a internet. No se puede guardar en este momento.',1);el.value=cont[idx]?cont[idx].docFis||'':'';return;}
+  var m=cont[idx];if(!m)return;
+  var v=(el.value||'').trim().toUpperCase();el.value=v;
+  if((m.docFis||'')===v)return;
+  m.docFis=v;
+  try{localStorage.setItem(CK,JSON.stringify(cont));}catch(e){}
+  save();renderContable();
+  toast(v?'Doc. fisico guardado: '+v:'Doc. fisico borrado');
+}
 function contSetDocSis(idx,el){
   if(!getPerm('contable-edit')){toast('No tienes permiso para modificar el libro contable',1);return;}
   if(sinConexionActiva()){toast('Sin conexion a internet. No se puede guardar en este momento.',1);el.value=cont[idx]?cont[idx].docSis||'':'';return;}
@@ -8103,7 +8142,7 @@ function contSetDocSis(idx,el){
   m.docSis=v;
   try{localStorage.setItem(CK,JSON.stringify(cont));}catch(e){}
   save();
-  el.style.borderColor='#27ae60';setTimeout(function(){el.style.borderColor='';},900);
+  renderContable();
   toast(v?'Doc. sistema guardado: '+v:'Doc. sistema borrado');
 }
 
@@ -10263,7 +10302,7 @@ function goTab(id,el){
   ['inv-search','hist-search','cart-buscar','cont-buscar','cli-search'].forEach(function(sid){
     var el2=document.getElementById(sid);if(el2)el2.value='';
   });
-  invPage=1;hisPag=1;cartSort={col:'dias',asc:true};credPag=1;contPage=1;entPag=1;cliPag=1;
+  invPage=1;hisPag=1;cartSort={col:'dias',asc:true};credPag=1;contPage=0;entPag=1;cliPag=1;
   if(id==='resumen'){renderRes();cerrarDetalleRes();}
   if(id==='cartera')renderCart();
   if(id==='creditos')renderCreditos();
